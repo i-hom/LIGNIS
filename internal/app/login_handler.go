@@ -9,5 +9,5 @@ func (a App) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRespon
 	if len(req.Login) < 5 || (len(req.Password) < 5 && req.Password == "") {
 
 	}
-	
+	return &api.LoginResponse{}, nil
 }
