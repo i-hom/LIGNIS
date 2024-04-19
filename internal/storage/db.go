@@ -19,6 +19,11 @@ func NewMongo(config *Config) (*Database, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = conn.Ping(context.TODO(), nil)
+	if err != nil {
+		return nil, err
+	}
+
 	db := conn.Database(config.MongoDatabase)
 	return &Database{
 		conn: conn,

@@ -21,7 +21,7 @@ func NewAuth(config *Config) *Auth {
 }
 
 func (a Auth) GenerateToken(user *model.UserWithID) (string, error) {
-	expirationTime := time.Now().Add(time.Duration(a.ttl))
+	expirationTime := time.Now().Add(time.Duration(a.ttl) * time.Second)
 	claims := &model.Claims{
 		UserID: user.ID,
 		Role:   user.Role,

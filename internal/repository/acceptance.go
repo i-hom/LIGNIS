@@ -18,7 +18,7 @@ func NewAcceptanceRepo(collection *mongo.Collection) *AcceptanceRepo {
 	}
 }
 
-func (a *AcceptanceRepo) Create(acceptance *model.Acceptance) (primitive.ObjectID, error) {
+func (a AcceptanceRepo) Create(acceptance *model.Acceptance) (primitive.ObjectID, error) {
 	res, err := a.collection.InsertOne(context.TODO(), acceptance)
 	if err != nil {
 		return primitive.NilObjectID, err

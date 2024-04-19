@@ -1,10 +1,12 @@
 package app
 
 import (
+	"fmt"
 	"lignis/internal/config"
 	"lignis/internal/generated/api"
 	"lignis/internal/repository"
 	"lignis/internal/service/auth"
+	"lignis/internal/service/minio"
 	"lignis/internal/storage"
 )
 
@@ -13,8 +15,9 @@ type App struct {
 
 	config *config.Config
 
-	auth *auth.Auth
-	db   *storage.Database
+	auth  *auth.Auth
+	db    *storage.Database
+	minio *minio.MinioStorage
 
 	agentRepo      *repository.AgentRepo
 	productRepo    *repository.ProductRepo
@@ -30,7 +33,7 @@ func NewApp() (*App, error) {
 	if err := app.initConfig(); err != nil {
 		return &App{}, err
 	}
-
+	fmt.Println("Successfully loaded .env file")
 	if err := app.initAuth(); err != nil {
 		return &App{}, err
 	}
@@ -38,7 +41,11 @@ func NewApp() (*App, error) {
 	if err := app.initDB(); err != nil {
 		return &App{}, err
 	}
-
+	fmt.Println("Successfully connected to MongoDB")
+	if err := app.initMinio(); err != nil {
+		return &App{}, err
+	}
+	fmt.Println("Successfully connected to MinIO")
 	app.initRepo()
 
 	return &app, nil

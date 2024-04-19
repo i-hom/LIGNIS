@@ -18,7 +18,7 @@ func NewAgentRepo(collection *mongo.Collection) *AgentRepo {
 	}
 }
 
-func (a *AgentRepo) Create(agent *model.Agent) (primitive.ObjectID, error) {
+func (a AgentRepo) Create(agent *model.Agent) (primitive.ObjectID, error) {
 	res, err := a.collection.InsertOne(context.TODO(), agent)
 	if err != nil {
 		return primitive.NilObjectID, err

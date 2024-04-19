@@ -1,32 +1,45 @@
 package app
 
 import (
-	dev "lignis/build"
+	"context"
+	"lignis/internal/config"
+	"lignis/internal/generated/api"
 	"lignis/internal/repository"
 	"lignis/internal/service/auth"
+	"lignis/internal/service/minio"
 	"lignis/internal/storage"
 
+	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
 func (a *App) initConfig() error {
-	if dev.Dev {
-		err := dev.LoadConfig()
-		if err != nil {
-			return err
-		}
-	}
-
-	err := envconfig.Process("", a.config)
+	err := godotenv.Load(".env1")
 	if err != nil {
 		return err
 	}
+
+	config := config.Config{}
+	err = envconfig.Process("", &config)
+	if err != nil {
+		return err
+	}
+	a.config = &config
 	return nil
 }
 
 func (a *App) initDB() error {
 	var err error
 	a.db, err = storage.NewMongo(a.config.Mongo)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (a *App) initMinio() error {
+	var err error
+	a.minio, err = minio.NewMinio(a.config.Minio)
 	if err != nil {
 		return err
 	}
@@ -45,4 +58,13 @@ func (a *App) initRepo() {
 	a.userRepo = repository.NewUserRepo(a.db.GetCollection("users"))
 	a.acceptanceRepo = repository.NewAcceptanceRepo(a.db.GetCollection("acceptances"))
 	a.customerRepo = repository.NewCustomerRepo(a.db.GetCollection("customers"))
+}
+
+func (a App) HandleBearerAuth(ctx context.Context, operationName string, t api.BearerAuth) (context.Context, error) {
+	user, err := a.auth.ValidateAndParseToken(ctx, t.Token)
+	if err != nil {
+		return ctx, err
+	}
+	ctx = context.WithValue(ctx, "user", user)
+	return ctx, nil
 }

@@ -18,7 +18,7 @@ func NewProductRepo(collection *mongo.Collection) *ProductRepo {
 	}
 }
 
-func (r *ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) {
+func (r ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) {
 	res, err := r.collection.InsertOne(context.TODO(), product)
 	if err != nil {
 		return primitive.NilObjectID, err

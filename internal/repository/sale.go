@@ -18,7 +18,7 @@ func NewSaleRepo(collection *mongo.Collection) *SaleRepo {
 	}
 }
 
-func (s *SaleRepo) Create(sale *model.Sale) (primitive.ObjectID, error) {
+func (s SaleRepo) Create(sale *model.Sale) (primitive.ObjectID, error) {
 	res, err := s.collection.InsertOne(context.TODO(), sale)
 	if err != nil {
 		return primitive.NilObjectID, err
