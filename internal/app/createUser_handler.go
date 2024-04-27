@@ -17,7 +17,7 @@ func (a App) CreateUser(ctx context.Context, req *api.User) (*api.ResponseWithID
 		return &api.ResponseWithID{}, errors.New("access denied")
 	}
 
-	if len(req.Fio) < 5 || len(req.Login) < 5 || len(req.Password) < 5 || strings.Contains(req.Password, " ") {
+	if strings.Contains(req.Password, " ") || strings.Contains(req.Login, " ") {
 		return &api.ResponseWithID{}, errors.New("invalid data")
 	}
 
@@ -29,12 +29,12 @@ func (a App) CreateUser(ctx context.Context, req *api.User) (*api.ResponseWithID
 	pass := hasher.Sum32()
 
 	res, err := a.userRepo.Create(&model.User{
-		Name: req.Fio,
+		Fio: req.Fio,
 		LoginData: model.LoginData{
 			Login:    req.Login,
 			HashPass: fmt.Sprint(pass),
 		},
-		Role: req.Role,
+		Role: string(req.Role),
 	})
 	if err != nil {
 		return &api.ResponseWithID{}, err

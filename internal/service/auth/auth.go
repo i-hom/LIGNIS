@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"lignis/internal/model"
 	"time"
 
@@ -37,7 +36,7 @@ func (a Auth) GenerateToken(user *model.UserWithID) (string, error) {
 	return tokenString, nil
 }
 
-func (a Auth) ValidateAndParseToken(ctx context.Context, tokenString string) (*model.Claims, error) {
+func (a Auth) ValidateAndParseToken(tokenString string) (*model.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &model.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(a.signKey), nil
 	})

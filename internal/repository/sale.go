@@ -4,6 +4,7 @@ import (
 	"context"
 	"lignis/internal/model"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -24,4 +25,12 @@ func (s SaleRepo) Create(sale *model.Sale) (primitive.ObjectID, error) {
 		return primitive.NilObjectID, err
 	}
 	return res.InsertedID.(primitive.ObjectID), nil
+}
+
+func (s SaleRepo) GetByOption(from, to string, page, limit int64) ([]model.SaleWithID, error) {
+	var sales []model.SaleWithID
+
+	var filter bson.M
+
+	return sales, nil
 }

@@ -1,6 +1,7 @@
 package minio
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -34,10 +35,18 @@ func NewMinio(config *Config) (*MinioStorage, error) {
 	}, nil
 }
 
-func (storage MinioStorage) Upload(ctx context.Context, objName string, reader io.Reader, objSize int64) (minio.UploadInfo, error) {
-	return storage.client.PutObject(ctx, storage.bucket, objName, reader, objSize, minio.PutObjectOptions{})
+func (storage MinioStorage) Upload(ctx context.Context, objName string, file io.Reader) (minio.UploadInfo, error) {
+	buffer, err := io.ReadAll(file)
+	if err != nil {
+		return minio.UploadInfo{}, err
+	}
+	return storage.client.PutObject(ctx, storage.bucket, objName, bytes.NewReader(buffer), int64(len(buffer)), minio.PutObjectOptions{})
 }
 
 func (storage MinioStorage) Download(ctx context.Context, objName string) (*minio.Object, error) {
 	return storage.client.GetObject(ctx, storage.bucket, objName, minio.GetObjectOptions{})
+}
+
+func (storage MinioStorage) Delete(ctx context.Context, objName string) error {
+	return storage.client.RemoveObject(ctx, storage.bucket, objName, minio.RemoveObjectOptions{})
 }

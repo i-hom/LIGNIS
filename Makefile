@@ -23,7 +23,7 @@ gen-spec: clean-gen gen-server
 
 deploy:
 	@go build -o build/main cmd/main.go
-	@tar czf - build | ssh root@209.38.204.242 "tar xzf - && docker network create lignis-net || true && docker-compose -f build/docker_compose.yaml up --build -d"
+	@tar czf - build | ssh root@209.38.204.242 "tar xzf - && docker-compose -f build/docker_compose.yaml up --build -d"
 
 docker-compose-infra:
 	@docker-compose -f build/docker_compose.yaml up -d
@@ -31,6 +31,5 @@ docker-compose-infra:
 run:
 	@clear
 	@go build -o build/main cmd/main.go
-	@docker network create lignis-net || true
 	@docker-compose -f build/docker_compose.yaml up --build -d
 

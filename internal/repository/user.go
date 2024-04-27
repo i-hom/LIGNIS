@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"lignis/internal/model"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -20,6 +21,17 @@ func NewUserRepo(collection *mongo.Collection) *UserRepo {
 }
 
 func (u UserRepo) Create(user *model.User) (primitive.ObjectID, error) {
+	var dbuser model.UserWithID
+	err := u.collection.FindOne(
+		context.TODO(), bson.M{
+			"$or": bson.A{
+				bson.M{"login": user.Login},
+				bson.M{"fio": user.Fio},
+			},
+		}).Decode(&dbuser)
+	if err == nil {
+		return primitive.NilObjectID, errors.New("user already exists")
+	}
 	res, err := u.collection.InsertOne(context.TODO(), user)
 	if err != nil {
 		return primitive.NilObjectID, err

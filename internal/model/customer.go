@@ -3,7 +3,7 @@ package model
 import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type Customer struct {
-	Name    string `bson:"name"`
+	Fio     string `bson:"fio"`
 	Phone   string `bson:"phone"`
 	Address string `bson:"address"`
 }

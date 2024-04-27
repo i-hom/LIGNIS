@@ -3,7 +3,7 @@ info:
   version: 1.0.0
   title: LIGNIS API
 servers:
-  - url: http://localhost:7707/
+  - url: https://lignis.webhook.uz/
 paths:
   /api/v1/login:
     post:
@@ -30,8 +30,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/v1/user:
-    post:
+  /api/v1/user: 
+    post: #admin
       summary: Create user
       description: Create user
       operationId: createUser
@@ -54,8 +54,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    get:
+      summary: Get users by pattern
+        operationId: getUsers
+        parameters:
+          - in: query
+            name: pattern
+            schema:
+              type: string
+              default: ''
+          - in: query
+            name: limit
+            schema:
+              type: integer
+              minimum: 1
+              maximum: 100
+              default: 10
+          - in: query
+            name: page
+            schema:
+              type: integer
+              minimum: 1
+              default: 1
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserWithID'
+          default:
+            description: Unauthorized
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
   /api/v1/customer:
-    post:
+    post: #salesman
       summary: Create customer
       operationId: createCustomer
       requestBody:
@@ -77,8 +114,45 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    get:
+      summary: Get customers
+      operationId: getCustomers
+      parameters:
+        - in: query
+          name: pattern
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/v1/agent:
-    post:
+    post: #admin
       summary: Create Agent
       operationId: createAgent
       requestBody:
@@ -100,15 +174,52 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    get:
+      summary: Get agents by pattern
+      operationId: getAgents
+      parameters:
+        - in: query
+          name: pattern
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /api/v1/product:
-    post:
+    post: #manager
       summary: Create product
       description: Create product
       operationId: createProduct
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/AddProductRequest'
       responses:
@@ -124,7 +235,279 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  
+    get:
+      summary: Get products
+      description: Get products
+      operationId: getProducts
+      parameters:
+        - in: query
+          name: pattern
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GetProducts'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      summary: Update product
+      description: Update product
+      operationId: updateProduct
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for search
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EditProductRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/sale:
+    post: #salesman
+      summary: Create sale
+      description: Create sale
+      operationId: createSale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sales'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get sales
+      description: Get sales
+      operationId: getSales
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page 
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalesWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete: #salesman
+      summary: Delete sale
+      operationId: deleteSale
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for delete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/acceptance:
+    post: #manager
+      summary: Create acceptance
+      description: Create acceptance
+      operationId: createAcceptance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Acceptance'
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get acceptances
+      description: Get acceptances
+      operationId: getAcceptances
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: page 
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AcceptanceWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete acceptance
+      operationId: deleteAcceptance
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v1/image/{id}:
+    get:
+      summary: Get image
+      operationId: getImage
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for search
+      responses:
+        '200':
+          description: OK
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     BearerAuth:
@@ -155,8 +538,10 @@ components:
       properties:
         login:
           type: string
+          minLength: 5
         password:
           type: string
+          minLength: 8
     LoginResponse:
       type: object
       required:
@@ -180,11 +565,79 @@ components:
       properties:
         name:
           type: string
+          minLength: 5
         code:
           type: string
+          minLength: 5
         photo:
-          type: number
+          type: string
           format: binary
+    EditProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 5
+        code:
+          type: string
+          minLength: 5
+        price:
+          type: number
+          minimum: 0
+        photo:
+          type: string
+          format: binary
+    GetProducts:
+      type: object
+      required:
+        - id
+        - name
+        - code 
+        - price
+        - quantity
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+    SaleProduct:
+      type: object
+      required:
+        - id
+        - quantity
+        - price
+      properties:
+        id:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+    AcceptanceProduct:
+      type: object
+      required:
+        - id
+        - quantity
+        - cost_price
+        - sale_price
+      properties:
+        id:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        cost_price:
+          type: number
+          minimum: 0
+        sale_price:
+          type: number
+          minimum: 0
     User:
       type: object
       required:
@@ -195,15 +648,21 @@ components:
       properties:
         fio:
           type: string
+          minLength: 5
         login:
           type: string
+          minLength: 5
         password:
           type: string
+          minLength: 8
         role:
           type: string
+          enum: [admin, manager, salesman]
     UserWithID:
       allOf:
         - type: object
+          required:
+            - id
           properties:
             id:
               type: string
@@ -217,13 +676,18 @@ components:
       properties:
         fio:
           type: string
+          minLength: 5
         phone:
           type: string
+          minLength: 13
         address:
           type: string
+          minLength: 5
     CustomerWithID:
       allOf:
         - type: object
+          required:
+            - id
           properties:
             id:
               type: string
@@ -238,19 +702,76 @@ components:
       properties:
         fio:
           type: string
+          minLength: 5
         phone:
           type: string
+          minLength: 13
         instagram_username:
           type: string
+          minLength: 5
         bonus_percent:
-          type: number
+          type: integer
     AgentWithID:
       allOf:
         - type: object
+          required:
+            - id
           properties:
             id:
               type: string
         - $ref: '#/components/schemas/Agent'
-
+    Sales:
+      type: object
+      required:
+        - customer_id
+        - agent_id
+        - products
+        - total_uzs
+        - total_usd
+        - currency_code
+      properties:
+        customer_id:
+          type: string
+        agent_id:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleProduct'
+        total_uzs:
+          type: number
+        total_usd:
+          type: number
+        currency_code:
+          type: string
+          enum: [USD, UZS]
+    SalesWithID:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+        - $ref: '#/components/schemas/Sales'
+    Acceptance:
+      type: object
+      requred:
+      - products
+      - accepted_by
+      properties:
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/AcceptanceProduct'
+    AcceptanceWithID:
+      allOf:
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+        - $ref: '#/components/schemas/Acceptance'
 security:
   - BearerAuth: [ ]

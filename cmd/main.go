@@ -23,7 +23,7 @@ func main() {
 		HTTPBindPort int    `envconfig:"HTTP_BIND_PORT"`
 	}
 
-	envconfig.MustProcess("lignis", &config)
+	envconfig.MustProcess("", &config)
 
 	srv, err := api.NewServer(service, service)
 	if err != nil {

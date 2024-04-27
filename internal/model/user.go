@@ -8,7 +8,7 @@ type LoginData struct {
 }
 
 type User struct {
-	Name      string `bson:"name"`
+	Fio       string `bson:"fio"`
 	LoginData `bson:",inline"`
 	Role      string `bson:"role"`
 }

@@ -14,7 +14,7 @@ import (
 )
 
 func (a *App) initConfig() error {
-	err := godotenv.Load(".env1")
+	err := godotenv.Load(".env")
 	if err != nil {
 		return err
 	}
@@ -61,10 +61,14 @@ func (a *App) initRepo() {
 }
 
 func (a App) HandleBearerAuth(ctx context.Context, operationName string, t api.BearerAuth) (context.Context, error) {
-	user, err := a.auth.ValidateAndParseToken(ctx, t.Token)
+	user, err := a.auth.ValidateAndParseToken(t.Token)
 	if err != nil {
 		return ctx, err
 	}
 	ctx = context.WithValue(ctx, "user", user)
 	return ctx, nil
+}
+
+func (a App) NewError(ctx context.Context, err error) *api.ErrorStatusCode {
+	return &api.ErrorStatusCode{StatusCode: 404, Response: api.Error{Message: err.Error()}}
 }

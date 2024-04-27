@@ -8,8 +8,7 @@
 *.so
 *.dylib
 
-*.mod
-*.sum
+go.*
 
 # Test binary, built with `go test -c`
 *.test
@@ -23,6 +22,7 @@
 # Go workspace file
 go.work
 
-/build/*
-/internal/generated/*
-/.vscode/*
+build
+/internal/generated
+.vscode
+*.env
