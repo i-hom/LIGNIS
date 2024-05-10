@@ -36,5 +36,5 @@ func (a App) DeleteAcceptance(ctx context.Context, params api.DeleteAcceptancePa
 	if err != nil {
 		return &api.SuccessResponse{}, err
 	}
-	return &api.SuccessResponse{}, nil
+	return &api.SuccessResponse{Message: "acceptance deleted"}, nil
 }

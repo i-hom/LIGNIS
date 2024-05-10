@@ -14,10 +14,12 @@ func (a App) UpdateProduct(ctx context.Context, req *api.EditProductRequestMulti
 		return &api.SuccessResponse{}, errors.New("access denied")
 	}
 
-	product, err := a.productRepo.Get(params.ID)
+	data, _, err := a.productRepo.GetByOption(params.ID, 1, 1)
 	if err != nil {
 		return &api.SuccessResponse{}, err
 	}
+
+	product := &data[0]
 
 	if req.Name.Set {
 		product.Name = req.Name.Value
@@ -25,7 +27,7 @@ func (a App) UpdateProduct(ctx context.Context, req *api.EditProductRequestMulti
 	if req.Code.Set {
 		product.Code = req.Code.Value
 	}
-	if req.Price.Set {
+	if req.Price.Value > 0 {
 		if product.Quantity == 0 {
 			return &api.SuccessResponse{}, errors.New("there is no products in the stock")
 		}

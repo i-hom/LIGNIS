@@ -5,11 +5,11 @@ import (
 	"lignis/internal/generated/api"
 )
 
-func (a App) GetProducts(ctx context.Context, params api.GetProductsParams) ([]api.GetProducts, error) {
-	products, err := a.productRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
+func (a App) GetProducts(ctx context.Context, params api.GetProductsParams) (*api.GetProductsOK, error) {
+	products, total, err := a.productRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
 	response := make([]api.GetProducts, 0)
 	if err != nil {
-		return []api.GetProducts{}, err
+		return nil, err
 	}
 
 	for i := range products {
@@ -22,5 +22,5 @@ func (a App) GetProducts(ctx context.Context, params api.GetProductsParams) ([]a
 		})
 	}
 
-	return response, nil
+	return &api.GetProductsOK{Total: int(total), Products: response}, nil
 }

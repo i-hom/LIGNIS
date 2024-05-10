@@ -5,11 +5,11 @@ import (
 	"lignis/internal/generated/api"
 )
 
-func (a App) GetCustomers(ctx context.Context, params api.GetCustomersParams) ([]api.CustomerWithID, error) {
+func (a App) GetCustomers(ctx context.Context, params api.GetCustomersParams) (*api.GetCustomersOK, error) {
 	var response []api.CustomerWithID
-	customers, err := a.customerRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
+	customers, total, err := a.customerRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
 	if err != nil {
-		return []api.CustomerWithID{}, err
+		return nil, err
 	}
 	for i := range customers {
 		response = append(response, api.CustomerWithID{
@@ -20,5 +20,5 @@ func (a App) GetCustomers(ctx context.Context, params api.GetCustomersParams) ([
 		})
 	}
 
-	return response, nil
+	return &api.GetCustomersOK{Total: int(total), Customers: response}, nil
 }

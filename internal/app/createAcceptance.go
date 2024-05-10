@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (a App) CreateAcceptance(ctx context.Context, req *api.Acceptance) (*api.ResponseWithID, error) {
+func (a App) CreateAcceptance(ctx context.Context, req *api.CreateAcceptanceReq) (*api.ResponseWithID, error) {
 	user := ctx.Value("user").(*model.Claims)
 
 	if user.Role != "manager" {

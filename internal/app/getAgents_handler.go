@@ -7,17 +7,17 @@ import (
 	"lignis/internal/model"
 )
 
-func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) ([]api.AgentWithID, error) {
+func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) (*api.GetAgentsOK, error) {
 	user := ctx.Value("user").(*model.Claims)
 
-	if user.Role != "admin" {
-		return []api.AgentWithID{}, errors.New("access denied")
+	if user.Role != "admin" && user.Role != "salesman" {
+		return nil, errors.New("access denied")
 	}
 
 	var response []api.AgentWithID
-	agents, err := a.agentRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
+	agents, total, err := a.agentRepo.GetByOption(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
 	if err != nil {
-		return []api.AgentWithID{}, err
+		return nil, err
 	}
 
 	for i := range agents {
@@ -29,5 +29,5 @@ func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) ([]api.A
 			BonusPercent:      int(agents[i].BonusPercent),
 		})
 	}
-	return response, nil
+	return &api.GetAgentsOK{Total: int(total), Agents: response}, nil
 }

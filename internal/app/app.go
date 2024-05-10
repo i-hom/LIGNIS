@@ -41,11 +41,11 @@ func NewApp() (*App, error) {
 	if err := app.initDB(); err != nil {
 		return &App{}, err
 	}
-	fmt.Println("Successfully connected to MongoDB")
+	fmt.Println("Successfully connected to " + app.config.Mongo.MongoURI)
 	if err := app.initMinio(); err != nil {
 		return &App{}, err
 	}
-	fmt.Println("Successfully connected to MinIO")
+	fmt.Println("Successfully connected to " + app.config.Minio.Endpoint)
 	app.initRepo()
 
 	return &app, nil

@@ -1,6 +1,10 @@
 package model
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Acceptance struct {
 	Products   []ShortProduct     `bson:"products"`
@@ -10,4 +14,5 @@ type Acceptance struct {
 type AcceptanceWithID struct {
 	ID         primitive.ObjectID `bson:"_id" json:"id"`
 	Acceptance `bson:",inline"`
+	Date       time.Time
 }

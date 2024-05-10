@@ -34,7 +34,7 @@ func (r CustomerRepo) Create(customer *model.Customer) (primitive.ObjectID, erro
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.CustomerWithID, error) {
+func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.CustomerWithID, int64, error) {
 	var customers []model.CustomerWithID
 
 	var filter bson.M
@@ -42,7 +42,7 @@ func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.Cu
 	if len(pattern) == 24 && limit == 1 {
 		id, err := primitive.ObjectIDFromHex(pattern)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		filter = bson.M{"_id": id}
 	} else {
@@ -59,11 +59,17 @@ func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.Cu
 		filter,
 		options.Find().SetSort(bson.D{{Key: "fio", Value: 1}}).SetLimit(limit).SetSkip((page-1)*limit))
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+	defer cursor.Close(context.TODO())
+
+	count, err := r.collection.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return nil, 0, err
 	}
 
 	if err := cursor.All(context.TODO(), &customers); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return customers, nil
+	return customers, count, nil
 }
