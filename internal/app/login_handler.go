@@ -3,11 +3,10 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
-	"hash/fnv"
 	"lignis/internal/generated/api"
-	"lignis/internal/model"
 	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func (a App) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginResponse, error) {
@@ -15,16 +14,14 @@ func (a App) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRespon
 		return &api.LoginResponse{}, errors.New("invalid data")
 	}
 
-	hasher := fnv.New32a()
-	_, err := hasher.Write([]byte(req.Password))
+	user, err := a.userRepo.GetByLogin(req.Login)
 	if err != nil {
-		return &api.LoginResponse{}, err
+		return nil, err
 	}
-	pass := hasher.Sum32()
 
-	user, err := a.userRepo.Get(model.LoginData{Login: req.Login, HashPass: fmt.Sprint(pass)})
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashPass), []byte(req.Password))
 	if err != nil {
-		return &api.LoginResponse{}, err
+		return nil, err
 	}
 
 	token, err := a.auth.GenerateToken(user)

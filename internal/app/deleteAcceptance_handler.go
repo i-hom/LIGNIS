@@ -21,7 +21,7 @@ func (a App) DeleteAcceptance(ctx context.Context, params api.DeleteAcceptancePa
 		return &api.SuccessResponse{}, err
 	}
 
-	acceptance, err := a.acceptanceRepo.Get(id)
+	acceptance, err := a.acceptanceRepo.GetByID(id)
 	if err != nil {
 		return &api.SuccessResponse{}, err
 	}

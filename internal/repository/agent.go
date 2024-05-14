@@ -22,15 +22,13 @@ func NewAgentRepo(collection *mongo.Collection) *AgentRepo {
 }
 
 func (a AgentRepo) Create(agent *model.Agent) (primitive.ObjectID, error) {
-	var dbagent model.AgentWithID
-	err := a.collection.FindOne(
+	if a.collection.FindOne(
 		context.TODO(), bson.M{
 			"$or": bson.A{
 				bson.M{"phone": agent.Phone},
 				bson.M{"instagram_username": agent.InstagramUsername},
 			},
-		}).Decode(&dbagent)
-	if err == nil {
+		}).Err() == nil {
 		return primitive.NilObjectID, errors.New("agent already exists")
 	}
 	res, err := a.collection.InsertOne(context.TODO(), agent)
@@ -40,29 +38,20 @@ func (a AgentRepo) Create(agent *model.Agent) (primitive.ObjectID, error) {
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (a AgentRepo) GetByOption(pattern string, page, limit int64) ([]model.AgentWithID, int64, error) {
+func (a AgentRepo) GetByPattern(pattern string, page, limit int64) ([]model.AgentWithID, int64, error) {
 	var agents []model.AgentWithID
-	var filter bson.M
-
-	if len(pattern) == 24 && limit == 1 {
-		id, err := primitive.ObjectIDFromHex(pattern)
-		if err != nil {
-			return nil, 0, err
-		}
-		filter = bson.M{"_id": id}
-	} else {
-		filter = bson.M{
-			"$or": bson.A{
-				bson.M{"phone": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"instagram_username": bson.M{"$regex": pattern, "$options": "i"}},
-			}, "is_deleted": bson.M{"$exists": false}}
-	}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"phone": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"instagram_username": bson.M{"$regex": pattern, "$options": "i"}},
+		}, "is_deleted": bson.M{"$exists": false}}
 
 	cursor, err := a.collection.Find(
 		context.TODO(),
 		filter,
 		options.Find().SetSort(bson.D{{Key: "fio", Value: 1}}).SetLimit(limit).SetSkip((page-1)*limit))
+
 	if err != nil {
 		return nil, 0, err
 	}
@@ -73,8 +62,28 @@ func (a AgentRepo) GetByOption(pattern string, page, limit int64) ([]model.Agent
 		return nil, 0, err
 	}
 
-	if err = cursor.All(context.TODO(), &agents); err != nil {
-		return nil, 0, err
+	for cursor.Next(context.TODO()) {
+		var agent model.AgentWithID
+		err = cursor.Decode(&agent)
+		if err != nil {
+			return nil, 0, err
+		}
+		agents = append(agents, agent)
 	}
+
 	return agents, count, nil
+}
+
+func (a AgentRepo) GetByID(id primitive.ObjectID) (*model.AgentWithID, error) {
+	var agent model.AgentWithID
+	err := a.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&agent)
+	if err != nil {
+		return nil, err
+	}
+	return &agent, nil
+}
+
+func (a AgentRepo) Delete(id primitive.ObjectID) error {
+	err := a.collection.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"is_deleted": true}})
+	return err.Err()
 }

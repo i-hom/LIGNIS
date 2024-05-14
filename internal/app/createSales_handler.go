@@ -21,6 +21,8 @@ func (a App) CreateSale(ctx context.Context, req *api.Sales) (*api.ResponseWithI
 	}
 
 	var sales []model.ShortProduct
+	var newSale model.Sale
+	var err error
 
 	for _, p := range req.Products {
 		if p.Quantity < 1 {
@@ -44,26 +46,29 @@ func (a App) CreateSale(ctx context.Context, req *api.Sales) (*api.ResponseWithI
 		})
 	}
 
-	customerID, err := primitive.ObjectIDFromHex(req.CustomerID)
-	if err != nil {
-		return &api.ResponseWithID{}, errors.New("invalid customer id")
-	}
-
-	agentID, err := primitive.ObjectIDFromHex(req.AgentID)
-	if err != nil {
-		return &api.ResponseWithID{}, errors.New("invalid agent id")
-	}
-
-	res, err := a.saleRepo.Create(&model.Sale{
+	newSale = model.Sale{
 		SalesmanId:   user.UserID,
-		CustomerId:   customerID,
-		AgentId:      agentID,
 		Cart:         sales,
 		TotalUZS:     req.TotalUzs,
 		TotalUSD:     req.TotalUsd,
 		CurrencyCode: string(req.CurrencyCode),
-	})
+	}
 
+	if req.CustomerID.Set {
+		newSale.CustomerId, err = primitive.ObjectIDFromHex(req.CustomerID.Value)
+		if err != nil {
+			return &api.ResponseWithID{}, errors.New("invalid customer id")
+		}
+	}
+
+	if req.AgentID.Set {
+		newSale.AgentId, err = primitive.ObjectIDFromHex(req.AgentID.Value)
+		if err != nil {
+			return &api.ResponseWithID{}, errors.New("invalid agent id")
+		}
+	}
+
+	res, err := a.saleRepo.Create(&newSale)
 	if err != nil {
 		return &api.ResponseWithID{}, err
 	}

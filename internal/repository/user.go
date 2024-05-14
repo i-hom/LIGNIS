@@ -22,17 +22,10 @@ func NewUserRepo(collection *mongo.Collection) *UserRepo {
 }
 
 func (u UserRepo) Create(user *model.User) (primitive.ObjectID, error) {
-	var dbuser model.UserWithID
-	err := u.collection.FindOne(
-		context.TODO(), bson.M{
-			"$or": bson.A{
-				bson.M{"login": user.Login},
-				bson.M{"fio": user.Fio},
-			},
-		}).Decode(&dbuser)
-	if err == nil {
+	if u.collection.FindOne(context.TODO(), bson.M{"login": user.Login}).Err() == nil {
 		return primitive.NilObjectID, errors.New("user already exists")
 	}
+
 	res, err := u.collection.InsertOne(context.TODO(), user)
 	if err != nil {
 		return primitive.NilObjectID, err
@@ -40,22 +33,15 @@ func (u UserRepo) Create(user *model.User) (primitive.ObjectID, error) {
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (u UserRepo) GetByOption(pattern string, page, limit int64) ([]model.UserWithID, int64, error) {
+func (u UserRepo) GetByPattern(pattern string, page, limit int64) ([]model.UserWithID, int64, error) {
 	var users []model.UserWithID
-	var filter bson.M
-	if len(pattern) == 24 && limit == 1 {
-		id, err := primitive.ObjectIDFromHex(pattern)
-		if err != nil {
-			return nil, 0, err
-		}
-		filter = bson.M{"_id": id}
-	} else {
-		filter = bson.M{
-			"$or": bson.A{
-				bson.M{"login": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
-			}, "deleted_at": bson.M{"$ne": nil}}
-	}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"login": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"role": bson.M{"$regex": pattern, "$options": "i"}},
+		}, "is_deleted": bson.M{"$exists": false}}
+
 	cursor, err := u.collection.Find(
 		context.TODO(),
 		filter,
@@ -70,17 +56,37 @@ func (u UserRepo) GetByOption(pattern string, page, limit int64) ([]model.UserWi
 	if err != nil {
 		return nil, 0, err
 	}
-	if err = cursor.All(context.TODO(), &users); err != nil {
-		return nil, 0, err
+
+	for cursor.Next(context.TODO()) {
+		var user model.UserWithID
+		err = cursor.Decode(&user)
+		if err != nil {
+			return nil, 0, err
+		}
+		users = append(users, user)
 	}
 	return users, count, nil
 }
 
-func (u UserRepo) Get(credits model.LoginData) (*model.UserWithID, error) {
+func (u UserRepo) GetByID(id primitive.ObjectID) (*model.UserWithID, error) {
 	var user model.UserWithID
-	err := u.collection.FindOne(context.TODO(), bson.M{"login": credits.Login, "hashpass": credits.HashPass}).Decode(&user)
+	err := u.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (u UserRepo) GetByLogin(login string) (*model.UserWithID, error) {
+	var user model.UserWithID
+	err := u.collection.FindOne(context.TODO(), bson.M{"login": login}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (u UserRepo) Delete(id primitive.ObjectID) error {
+	err := u.collection.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"is_deleted": true}})
+	return err.Err()
 }

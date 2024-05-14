@@ -14,10 +14,6 @@ func (a App) CreateAgent(ctx context.Context, req *api.Agent) (*api.ResponseWith
 		return &api.ResponseWithID{}, errors.New("access denied")
 	}
 
-	if len(req.Fio) < 5 || len(req.Phone) < 5 || len(req.InstagramUsername) < 5 {
-		return &api.ResponseWithID{}, errors.New("invalid data")
-	}
-
 	res, err := a.agentRepo.Create(&model.Agent{
 		Fio:               req.Fio,
 		Phone:             req.Phone,

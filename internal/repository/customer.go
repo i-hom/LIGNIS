@@ -22,9 +22,7 @@ func NewCustomerRepo(collection *mongo.Collection) *CustomerRepo {
 }
 
 func (r CustomerRepo) Create(customer *model.Customer) (primitive.ObjectID, error) {
-	var dbcustomer model.CustomerWithID
-	err := r.collection.FindOne(context.TODO(), bson.M{"phone": customer.Phone}).Decode(&dbcustomer)
-	if err == nil {
+	if r.collection.FindOne(context.TODO(), bson.M{"phone": customer.Phone}).Err() == nil {
 		return primitive.NilObjectID, errors.New("customer already exists")
 	}
 	res, err := r.collection.InsertOne(context.TODO(), customer)
@@ -34,25 +32,15 @@ func (r CustomerRepo) Create(customer *model.Customer) (primitive.ObjectID, erro
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.CustomerWithID, int64, error) {
+func (r CustomerRepo) GetByPattern(pattern string, page, limit int64) ([]model.CustomerWithID, int64, error) {
 	var customers []model.CustomerWithID
 
-	var filter bson.M
-
-	if len(pattern) == 24 && limit == 1 {
-		id, err := primitive.ObjectIDFromHex(pattern)
-		if err != nil {
-			return nil, 0, err
-		}
-		filter = bson.M{"_id": id}
-	} else {
-		filter = bson.M{
-			"$or": bson.A{
-				bson.M{"address": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"phone": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
-			}}
-	}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"address": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"phone": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"fio": bson.M{"$regex": pattern, "$options": "i"}},
+		}}
 
 	cursor, err := r.collection.Find(
 		context.TODO(),
@@ -67,9 +55,22 @@ func (r CustomerRepo) GetByOption(pattern string, page, limit int64) ([]model.Cu
 	if err != nil {
 		return nil, 0, err
 	}
-
-	if err := cursor.All(context.TODO(), &customers); err != nil {
-		return nil, 0, err
+	for cursor.Next(context.TODO()) {
+		var customer model.CustomerWithID
+		err = cursor.Decode(&customer)
+		if err != nil {
+			return nil, 0, err
+		}
+		customers = append(customers, customer)
 	}
 	return customers, count, nil
+}
+
+func (r CustomerRepo) GetByID(id primitive.ObjectID) (*model.CustomerWithID, error) {
+	var customer model.CustomerWithID
+	err := r.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&customer)
+	if err != nil {
+		return nil, err
+	}
+	return &customer, nil
 }

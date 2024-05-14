@@ -22,9 +22,7 @@ func NewProductRepo(collection *mongo.Collection) *ProductRepo {
 }
 
 func (r ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) {
-	var dbproduct model.ProductWithID
-	err := r.collection.FindOne(context.TODO(), bson.M{"code": product.Code}).Decode(&dbproduct)
-	if err == nil {
+	if r.collection.FindOne(context.TODO(), bson.M{"code": product.Code}).Err() == nil {
 		return primitive.NilObjectID, errors.New("product already exists")
 	}
 
@@ -35,24 +33,26 @@ func (r ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) 
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
-func (r ProductRepo) GetByOption(pattern string, page, limit int64) ([]model.ProductWithID, int64, error) {
+func (r ProductRepo) Update(product *model.ProductWithID) error {
+	_, err := r.collection.UpdateOne(
+		context.TODO(),
+		bson.M{"_id": product.ID},
+		bson.M{"$set": product},
+	)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r ProductRepo) GetByPattern(pattern string, page, limit int64) ([]model.ProductWithID, int64, error) {
 	var products []model.ProductWithID
 
-	var filter bson.M
-
-	if len(pattern) == 24 && limit == 1 {
-		id, err := primitive.ObjectIDFromHex(pattern)
-		if err != nil {
-			return nil, 0, err
-		}
-		filter = bson.M{"_id": id}
-	} else {
-		filter = bson.M{
-			"$or": bson.A{
-				bson.M{"code": bson.M{"$regex": pattern, "$options": "i"}},
-				bson.M{"name": bson.M{"$regex": pattern, "$options": "i"}},
-			}, "is_deleted": bson.M{"$exists": false}}
-	}
+	filter := bson.M{
+		"$or": bson.A{
+			bson.M{"code": bson.M{"$regex": pattern, "$options": "i"}},
+			bson.M{"name": bson.M{"$regex": pattern, "$options": "i"}},
+		}, "is_deleted": bson.M{"$exists": false}}
 
 	cursor, err := r.collection.Find(
 		context.TODO(),
@@ -69,18 +69,22 @@ func (r ProductRepo) GetByOption(pattern string, page, limit int64) ([]model.Pro
 		return nil, 0, err
 	}
 
-	if err := cursor.All(context.TODO(), &products); err != nil {
-		return nil, 0, err
+	for cursor.Next(context.TODO()) {
+		var product model.ProductWithID
+		err := cursor.Decode(&product)
+		if err != nil {
+			return nil, 0, err
+		}
+		products = append(products, product)
 	}
 	return products, count, nil
 }
 
-func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint32, price float64) error {
+func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint32) error {
 	err := r.collection.FindOneAndUpdate(
 		context.TODO(),
 		bson.M{"_id": product_id},
-		bson.M{"$inc": bson.M{"quantity": quantity},
-			"$set": bson.M{"sell_price": price}},
+		bson.M{"$inc": bson.M{"quantity": quantity}},
 	).Err()
 	if err != nil {
 		return err
@@ -116,46 +120,23 @@ func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint32) err
 	return nil
 }
 
-func (r ProductRepo) Get(id primitive.ObjectID) (*model.ProductWithID, error) {
-	var product model.ProductWithID
-	err := r.collection.FindOne(
-		context.TODO(),
-		bson.M{"_id": id, "id_deleted": bson.M{"$exists": false}},
-	).Decode(&product)
-	if err != nil {
-		return nil, err
-	}
-	return &product, nil
-}
-
-func (r ProductRepo) Update(product *model.ProductWithID) error {
-	_, err := r.collection.UpdateOne(
-		context.TODO(),
-		bson.M{"_id": product.ID},
-		bson.M{"$set": product},
-	)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (r ProductRepo) GetStats() (int, int, float64, error) {
 	var total_quantity int
 	var total_stock_value float64
-	var result bson.M
+	var result []bson.M
 
 	cursor, err := r.collection.Aggregate(
 		context.TODO(),
-		bson.D{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: nil},
-			{Key: "total_quantity", Value: bson.D{
-				{Key: "$sum", Value: "$quantity"},
+		mongo.Pipeline{
+			{{Key: "$group", Value: bson.D{
+				{Key: "_id", Value: nil},
+				{Key: "total_quantity", Value: bson.D{
+					{Key: "$sum", Value: "$quantity"},
+				},
+				},
 			},
 			},
-		},
-		},
-		})
+			}})
 
 	if err != nil {
 		return 0, 0, 0, err
@@ -163,31 +144,45 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	defer cursor.Close(context.TODO())
 
 	cursor.All(context.TODO(), &result)
-	total_quantity = result["total_quantity"].(int)
+	total_quantity = int(result[0]["total_quantity"].(int64))
 
 	cursor, err = r.collection.Aggregate(
 		context.TODO(),
-		bson.D{
+		mongo.Pipeline{{
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: nil},
 				{Key: "totalCostQuantity", Value: bson.D{
 					{Key: "$sum", Value: bson.D{
-						{Key: "$multiply", Value: bson.A{"$cost", "$quantity"}},
+						{Key: "$multiply", Value: bson.A{"$sell_price", "$quantity"}},
 					}},
 				}},
 			}},
-		})
+		}})
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
 	cursor.All(context.TODO(), &result)
-	total_stock_value = result["totalCostQuantity"].(float64)
+	total_stock_value = result[0]["totalCostQuantity"].(float64)
 
 	total_products, err := r.collection.EstimatedDocumentCount(context.TODO())
 	if err != nil {
 		return 0, 0, 0, err
 	}
 
-	return int(total_products), int(total_quantity), total_stock_value, nil
+	return int(total_products), total_quantity, total_stock_value, nil
 }
+
+func (r ProductRepo) GetByID(id primitive.ObjectID) (*model.ProductWithID, error) {
+	var product model.ProductWithID
+	err := r.collection.FindOne(
+		context.TODO(),
+		bson.M{"_id": id},
+	).Decode(&product)
+	if err != nil {
+		return nil, err
+	}
+	return &product, nil
+}
+
+func (r ProductRepo) Delete()

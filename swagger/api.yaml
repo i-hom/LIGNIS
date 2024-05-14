@@ -30,6 +30,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/user: 
     post: #admin
       summary: Create user
@@ -40,7 +41,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/CreateUserRequest'
       responses:
         '201':
           description: OK
@@ -99,6 +100,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete user
+      operationId: deleteUser
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for delete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/customer:
     post: #salesman
       summary: Create customer
@@ -167,6 +192,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/agent:
     post: #admin
       summary: Create Agent
@@ -235,6 +261,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete agent
+      operationId: deleteAgent
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for delete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/product:
     post: #manager
       summary: Create product
@@ -245,7 +295,7 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/AddProductRequest'
+              $ref: '#/components/schemas/CreateProductRequest'
       responses:
         '201':
           description: OK
@@ -335,6 +385,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/product/stats:
     get:
       summary: Get product stats
@@ -364,6 +415,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/sale:
     post: #salesman
       summary: Create sale
@@ -462,6 +514,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/acceptance:
     post: #manager
       summary: Create acceptance
@@ -566,6 +619,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
   /api/v1/image/{id}:
     get:
       summary: Get image
@@ -592,6 +646,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -640,7 +695,8 @@ components:
       properties:
         id:
           type: string
-    AddProductRequest:
+    
+    CreateProductRequest:
       type: object
       required:
         - name
@@ -658,6 +714,10 @@ components:
           format: binary
     EditProductRequest:
       type: object
+      required:
+        - name
+        - code
+        - price
       properties:
         name:
           type: string
@@ -705,13 +765,35 @@ components:
           type: integer
         price:
           type: number
+    
+    CreateUserRequest:
+      type: object
+      required:
+        - fio
+        - login
+        - password
+        - role
+      properties:
+        fio:
+          type: string
+          minLength: 5
+        login:
+          type: string
+          minLength: 5
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [admin, manager, salesman]
+    
     AcceptanceRequest:
       type: object
       required:
         - id
         - quantity
         - cost_price
-        - sale_price
+        - sell_price
       properties:
         id:
           type: string
@@ -721,7 +803,7 @@ components:
         cost_price:
           type: number
           minimum: 0
-        sale_price:
+        sell_price:
           type: number
           minimum: 0
     AcceptanceProduct:
@@ -742,36 +824,23 @@ components:
         cost_price:
           type: number
           minimum: 0      
-    
-    User:
+          
+    UserWithID:
       type: object
       required:
+        - id
         - fio
-        - login
-        - password
         - role
       properties:
+        id:
+          type: string
         fio:
           type: string
           minLength: 5
-        login:
-          type: string
-          minLength: 5
-        password:
-          type: string
-          minLength: 8
         role:
           type: string
           enum: [admin, manager, salesman]
-    UserWithID:
-      allOf:
-        - type: object
-          required:
-            - id
-          properties:
-            id:
-              type: string
-        - $ref: '#/components/schemas/User'
+   
     Customer:
       type: object
       required:
@@ -797,6 +866,7 @@ components:
             id:
               type: string
         - $ref: '#/components/schemas/Customer'
+    
     Agent:
       type: object
       required:
@@ -825,11 +895,10 @@ components:
             id:
               type: string
         - $ref: '#/components/schemas/Agent'
+    
     Sales:
       type: object
       required:
-        - customer_id
-        - agent_id
         - products
         - total_uzs
         - total_usd
@@ -863,6 +932,7 @@ components:
               type: string
               format: date
         - $ref: '#/components/schemas/Sales'
+    
     AcceptanceWithID:
       type: object
       required:

@@ -28,7 +28,18 @@ func (a App) CreateAcceptance(ctx context.Context, req *api.CreateAcceptanceReq)
 			return &api.ResponseWithID{}, err
 		}
 
-		a.productRepo.Add(id, uint32(p.Quantity), p.SalePrice)
+		product, err := a.productRepo.GetByID(id)
+		if err != nil {
+			return &api.ResponseWithID{}, err
+		}
+
+		product.Quantity += uint32(p.Quantity)
+		product.SellPrice = p.SellPrice
+
+		err = a.productRepo.Update(product)
+		if err != nil {
+			return &api.ResponseWithID{}, err
+		}
 
 		acceptance = append(acceptance, model.ShortProduct{
 			ID:       id,

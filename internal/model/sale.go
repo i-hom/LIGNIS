@@ -7,8 +7,8 @@ import (
 )
 
 type Sale struct {
-	AgentId      primitive.ObjectID `bson:"agent_id"`
-	CustomerId   primitive.ObjectID `bson:"customer_id"`
+	AgentId      primitive.ObjectID `bson:"agent_id,omitempty"`
+	CustomerId   primitive.ObjectID `bson:"customer_id,omitempty"`
 	SalesmanId   primitive.ObjectID `bson:"salesman_id"`
 	Cart         []ShortProduct     `bson:"cart"`
 	TotalUZS     float64            `bson:"total_uzs"`

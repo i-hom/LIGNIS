@@ -5,6 +5,8 @@ import (
 	"errors"
 	"lignis/internal/generated/api"
 	"lignis/internal/model"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func (a App) UpdateProduct(ctx context.Context, req *api.EditProductRequestMultipart, params api.UpdateProductParams) (*api.SuccessResponse, error) {
@@ -14,24 +16,27 @@ func (a App) UpdateProduct(ctx context.Context, req *api.EditProductRequestMulti
 		return &api.SuccessResponse{}, errors.New("access denied")
 	}
 
-	data, _, err := a.productRepo.GetByOption(params.ID, 1, 1)
+	id, err := primitive.ObjectIDFromHex(params.ID)
 	if err != nil {
 		return &api.SuccessResponse{}, err
 	}
 
-	product := &data[0]
+	product, err := a.productRepo.GetByID(id)
+	if err != nil {
+		return &api.SuccessResponse{}, err
+	}
 
-	if req.Name.Set {
-		product.Name = req.Name.Value
+	if req.Name != "" {
+		product.Name = req.Name
 	}
-	if req.Code.Set {
-		product.Code = req.Code.Value
+	if req.Code != "" {
+		product.Code = req.Code
 	}
-	if req.Price.Value > 0 {
+	if req.Price > 0 {
 		if product.Quantity == 0 {
 			return &api.SuccessResponse{}, errors.New("there is no products in the stock")
 		}
-		product.SellPrice = req.Price.Value
+		product.SellPrice = req.Price
 	}
 	if req.Photo.Set {
 		a.minio.Delete(ctx, product.ID.Hex())

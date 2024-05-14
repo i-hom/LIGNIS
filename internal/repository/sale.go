@@ -29,6 +29,15 @@ func (s SaleRepo) Create(sale *model.Sale) (primitive.ObjectID, error) {
 	return res.InsertedID.(primitive.ObjectID), nil
 }
 
+func (s SaleRepo) GetByID(id primitive.ObjectID) (*model.SaleWithID, error) {
+	var sale model.SaleWithID
+	err := s.collection.FindOne(
+		context.TODO(),
+		bson.M{"_id": id},
+	).Decode(&sale)
+	return &sale, err
+}
+
 func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWithID, int64, error) {
 	var sales []model.SaleWithID
 	var filter bson.M
@@ -55,7 +64,7 @@ func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWit
 			"_id": bson.M{
 				"$gte": primitive.NewObjectIDFromTimestamp(tfrom),
 				"$lte": primitive.NewObjectIDFromTimestamp(tto),
-			},
+			}, "is_deleted": bson.M{"$exists": false},
 		}
 	}
 	cursor, err := s.collection.Find(
@@ -82,4 +91,9 @@ func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWit
 		sales = append(sales, sale)
 	}
 	return sales, count, nil
+}
+
+func (s SaleRepo) Delete(id primitive.ObjectID) error {
+	result := s.collection.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"is_deleted": true}})
+	return result.Err()
 }

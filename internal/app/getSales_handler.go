@@ -24,7 +24,7 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 		cart := make([]api.SaleProduct, 0)
 
 		for j := range sales[i].Cart {
-			product, err := a.productRepo.Get(sales[i].Cart[j].ID)
+			product, err := a.productRepo.GetByID(sales[i].Cart[j].ID)
 			var product_name string
 			if err != nil {
 				product_name = "product not found"
@@ -41,8 +41,8 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 
 		response = append(response, api.SalesWithID{
 			ID:           sales[i].ID.Hex(),
-			AgentID:      sales[i].AgentId.Hex(),
-			CustomerID:   sales[i].CustomerId.Hex(),
+			AgentID:      api.OptString{Set: true, Value: sales[i].AgentId.Hex()},
+			CustomerID:   api.OptString{Set: true, Value: sales[i].CustomerId.Hex()},
 			Date:         sales[i].Date,
 			TotalUzs:     sales[i].TotalUZS,
 			TotalUsd:     sales[i].TotalUSD,

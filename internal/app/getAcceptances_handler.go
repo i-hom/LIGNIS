@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"errors"
-	"fmt"
 	"lignis/internal/generated/api"
 	"lignis/internal/model"
 )
@@ -16,19 +15,18 @@ func (a App) GetAcceptances(ctx context.Context, params api.GetAcceptancesParams
 	if user.Role != "manager" {
 		return nil, errors.New("access denied")
 	}
+
 	acceptances, count, err := a.acceptanceRepo.GetByDate(params.From.Value, params.To.Value, int64(params.Limit.Value), int64(params.Page.Value))
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println(acceptances)
 
 	for i := range acceptances {
 
 		products := make([]api.AcceptanceProduct, 0)
 
 		for p := range acceptances[i].Products {
-			product, _ := a.productRepo.Get(acceptances[i].Products[p].ID)
+			product, _ := a.productRepo.GetByID(acceptances[i].Products[p].ID)
 			products = append(products, api.AcceptanceProduct{
 				ID:        acceptances[i].Products[p].ID.Hex(),
 				Name:      product.Name,

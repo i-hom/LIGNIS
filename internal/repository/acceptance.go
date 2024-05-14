@@ -88,7 +88,7 @@ func (a AcceptanceRepo) GetByDate(from, to string, limit, page int64) ([]model.A
 	return acceptances, count, err
 }
 
-func (a AcceptanceRepo) Get(id primitive.ObjectID) (*model.AcceptanceWithID, error) {
+func (a AcceptanceRepo) GetByID(id primitive.ObjectID) (*model.AcceptanceWithID, error) {
 	var acceptance model.AcceptanceWithID
 	err := a.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&acceptance)
 	return &acceptance, err

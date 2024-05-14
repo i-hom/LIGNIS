@@ -7,7 +7,7 @@ import (
 	"lignis/internal/model"
 )
 
-func (a App) CreateProduct(ctx context.Context, req *api.AddProductRequestMultipart) (*api.ResponseWithID, error) {
+func (a App) CreateProduct(ctx context.Context, req *api.CreateProductRequestMultipart) (*api.ResponseWithID, error) {
 	user := ctx.Value("user").(*model.Claims)
 
 	if user.Role != "manager" {

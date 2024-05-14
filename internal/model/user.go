@@ -8,9 +8,10 @@ type LoginData struct {
 }
 
 type User struct {
-	Fio       string `bson:"fio"`
-	LoginData `bson:",inline"`
-	Role      string `bson:"role"`
+	Fio        string `bson:"fio"`
+	LoginData  `bson:",inline"`
+	Role       string `bson:"role"`
+	Is_Deleted bool   `bson:"deleted_at,omitempty"`
 }
 
 type UserWithID struct {
