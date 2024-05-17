@@ -28,7 +28,9 @@ func (a App) CreateProduct(ctx context.Context, req *api.CreateProductRequestMul
 	if err != nil {
 		return &api.ResponseWithID{}, err
 	}
-	a.minio.Upload(ctx, res.Hex(), req.Photo.File)
+	if req.Photo.Set {
+		a.minio.Upload(ctx, res.Hex(), req.Photo.Value.File)
+	}
 
 	return &api.ResponseWithID{ID: res.Hex()}, nil
 }

@@ -34,10 +34,10 @@ func (a App) DeleteSale(ctx context.Context, params api.DeleteSaleParams) (*api.
 		}
 	}
 
-	err = a.saleRepo.Delete(deletionID)
+	err = a.saleRepo.Delete(deletionID, user.UserID)
 	if err != nil {
 		return &api.SuccessResponse{}, err
 	}
 
-	return &api.SuccessResponse{}, nil
+	return &api.SuccessResponse{Message: "sale deleted"}, nil
 }

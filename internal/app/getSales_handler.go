@@ -15,7 +15,7 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 	}
 
 	var response []api.SalesWithID
-	sales, total, err := a.saleRepo.GetByDate(params.From.Value, params.To.Value, int64(params.Limit.Value), int64(params.Page.Value))
+	sales, total, err := a.saleRepo.GetByDate(params.From.Value, params.To.Value, int64(params.Limit.Value), int64(params.Page.Value), false)
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +43,7 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 			ID:           sales[i].ID.Hex(),
 			AgentID:      api.OptString{Set: true, Value: sales[i].AgentId.Hex()},
 			CustomerID:   api.OptString{Set: true, Value: sales[i].CustomerId.Hex()},
+			DeletedBy:    api.OptString{Set: true, Value: sales[i].Deleted_By.Hex()},
 			Date:         sales[i].Date,
 			TotalUzs:     sales[i].TotalUZS,
 			TotalUsd:     sales[i].TotalUSD,

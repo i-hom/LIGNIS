@@ -15,6 +15,7 @@ type Sale struct {
 	TotalUSD     float64            `bson:"total_usd"`
 	CurrencyCode string             `bson:"currency_code"`
 	Is_Deleted   bool               `bson:"deleted_at,omitempty"`
+	Deleted_By   primitive.ObjectID `bson:"deleted_by,omitempty"`
 }
 
 type SaleWithID struct {

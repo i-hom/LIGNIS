@@ -385,6 +385,204 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete product
+      operationId: deleteProduct
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for delete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/product/archive:
+    get:
+      summary: Get archived products
+      operationId: getArchivedProducts
+      parameters:
+        - in: query
+          name: pattern
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - products
+                properties:
+                  total:
+                    type: integer
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GetProducts'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /api/v1/sale/refund:
+    get:
+      summary: Get refunds
+      operationId: getRefunds
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: to
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - refunds
+                properties:
+                  total:
+                    type: integer
+                  refunds:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SalesWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/defect:
+    post:
+      summary: Create defect product
+      operationId: createDefect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - products
+              properties:
+                products:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DefectProduct' 
+      responses:
+        '201':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseWithID'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      summary: Get defects
+      operationId: getDefects
+      parameters:
+        - in: query
+          name: pattern
+          schema:
+            type: string
+            default: ''
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - total
+                  - defects
+                properties:
+                  total:
+                    type: integer
+                  defects:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Defect'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   
   /api/v1/product/stats:
     get:
@@ -701,7 +899,6 @@ components:
       required:
         - name
         - code
-        - photo
       properties:
         name:
           type: string
@@ -765,7 +962,6 @@ components:
           type: integer
         price:
           type: number
-    
     CreateUserRequest:
       type: object
       required:
@@ -786,7 +982,7 @@ components:
         role:
           type: string
           enum: [admin, manager, salesman]
-    
+        
     AcceptanceRequest:
       type: object
       required:
@@ -824,7 +1020,36 @@ components:
         cost_price:
           type: number
           minimum: 0      
-          
+
+    DefectProduct:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+        remark:
+          type: string
+    Defect:
+      type: object
+      required:
+        - id
+        - defects
+        - created_by
+      properties:
+        id:
+          type: string
+        created_by:
+          type: string
+        defects:
+          type: array
+          items:
+            $ref: '#/components/schemas/DefectProduct'
+
     UserWithID:
       type: object
       required:
@@ -904,6 +1129,8 @@ components:
         - total_usd
         - currency_code
       properties:
+        deleted_by:
+          type: string
         customer_id:
           type: string
         agent_id:

@@ -38,7 +38,7 @@ func (s SaleRepo) GetByID(id primitive.ObjectID) (*model.SaleWithID, error) {
 	return &sale, err
 }
 
-func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWithID, int64, error) {
+func (s SaleRepo) GetByDate(from, to string, limit, page int64, is_deleted bool) ([]model.SaleWithID, int64, error) {
 	var sales []model.SaleWithID
 	var filter bson.M
 	format := "2006-01-02"
@@ -64,7 +64,7 @@ func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWit
 			"_id": bson.M{
 				"$gte": primitive.NewObjectIDFromTimestamp(tfrom),
 				"$lte": primitive.NewObjectIDFromTimestamp(tto),
-			}, "is_deleted": bson.M{"$exists": false},
+			}, "is_deleted": bson.M{"$exists": is_deleted},
 		}
 	}
 	cursor, err := s.collection.Find(
@@ -93,7 +93,11 @@ func (s SaleRepo) GetByDate(from, to string, limit, page int64) ([]model.SaleWit
 	return sales, count, nil
 }
 
-func (s SaleRepo) Delete(id primitive.ObjectID) error {
-	result := s.collection.FindOneAndUpdate(context.TODO(), bson.M{"_id": id}, bson.M{"$set": bson.M{"is_deleted": true}})
+func (s SaleRepo) Delete(id, deleted_by primitive.ObjectID) error {
+	result := s.collection.FindOneAndUpdate(
+		context.TODO(),
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"is_deleted": true, "deleted_by": deleted_by}},
+	)
 	return result.Err()
 }

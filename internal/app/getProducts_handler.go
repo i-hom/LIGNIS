@@ -21,7 +21,7 @@ func (a App) GetProducts(ctx context.Context, params api.GetProductsParams) (*ap
 		return &api.GetProductsOK{Total: 1, Products: []api.GetProducts{{ID: product.ID.Hex(), Name: product.Name, Code: product.Code, Quantity: int(product.Quantity), Price: product.SellPrice}}}, nil
 	}
 
-	products, total, err := a.productRepo.GetByPattern(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value))
+	products, total, err := a.productRepo.GetByPattern(params.Pattern.Value, int64(params.Page.Value), int64(params.Limit.Value), false)
 	response := make([]api.GetProducts, 0)
 	if err != nil {
 		return nil, err

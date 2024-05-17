@@ -79,7 +79,7 @@ func (u UserRepo) GetByID(id primitive.ObjectID) (*model.UserWithID, error) {
 
 func (u UserRepo) GetByLogin(login string) (*model.UserWithID, error) {
 	var user model.UserWithID
-	err := u.collection.FindOne(context.TODO(), bson.M{"login": login}).Decode(&user)
+	err := u.collection.FindOne(context.TODO(), bson.M{"login": login, "is_deleted": bson.M{"$exists": false}}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}

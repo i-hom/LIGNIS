@@ -22,10 +22,21 @@ func NewProductRepo(collection *mongo.Collection) *ProductRepo {
 }
 
 func (r ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) {
-	if r.collection.FindOne(context.TODO(), bson.M{"code": product.Code}).Err() == nil {
-		return primitive.NilObjectID, errors.New("product already exists")
-	}
+	var p model.ProductWithID
 
+	err := r.collection.FindOne(
+		context.TODO(),
+		bson.M{"code": product.Code},
+	).Decode(&p)
+	if err == nil {
+		if p.Is_Deleted {
+			res, err := r.collection.UpdateOne(context.TODO(), bson.M{"_id": p.ID}, product)
+			return res.UpsertedID.(primitive.ObjectID), err
+		}
+		if !p.Is_Deleted {
+			return primitive.NilObjectID, errors.New("product already exists")
+		}
+	}
 	res, err := r.collection.InsertOne(context.TODO(), product)
 	if err != nil {
 		return primitive.NilObjectID, err
@@ -36,7 +47,7 @@ func (r ProductRepo) Create(product *model.Product) (primitive.ObjectID, error) 
 func (r ProductRepo) Update(product *model.ProductWithID) error {
 	_, err := r.collection.UpdateOne(
 		context.TODO(),
-		bson.M{"_id": product.ID},
+		bson.M{"_id": product.ID, "is_deleted": bson.M{"$exists": false}},
 		bson.M{"$set": product},
 	)
 	if err != nil {
@@ -45,14 +56,14 @@ func (r ProductRepo) Update(product *model.ProductWithID) error {
 	return nil
 }
 
-func (r ProductRepo) GetByPattern(pattern string, page, limit int64) ([]model.ProductWithID, int64, error) {
+func (r ProductRepo) GetByPattern(pattern string, page, limit int64, is_deleted bool) ([]model.ProductWithID, int64, error) {
 	var products []model.ProductWithID
 
 	filter := bson.M{
 		"$or": bson.A{
 			bson.M{"code": bson.M{"$regex": pattern, "$options": "i"}},
 			bson.M{"name": bson.M{"$regex": pattern, "$options": "i"}},
-		}, "is_deleted": bson.M{"$exists": false}}
+		}, "is_deleted": bson.M{"$exists": is_deleted}}
 
 	cursor, err := r.collection.Find(
 		context.TODO(),
@@ -83,7 +94,7 @@ func (r ProductRepo) GetByPattern(pattern string, page, limit int64) ([]model.Pr
 func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint32) error {
 	err := r.collection.FindOneAndUpdate(
 		context.TODO(),
-		bson.M{"_id": product_id},
+		bson.M{"_id": product_id, "is_deleted": bson.M{"$exists": false}},
 		bson.M{"$inc": bson.M{"quantity": quantity}},
 	).Err()
 	if err != nil {
@@ -96,7 +107,7 @@ func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint32) err
 	var product model.ProductWithID
 	err := r.collection.FindOne(
 		context.TODO(),
-		bson.M{"_id": product_id},
+		bson.M{"_id": product_id, "is_deleted": bson.M{"$exists": false}},
 	).Decode(&product)
 
 	if err != nil {
@@ -127,8 +138,9 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 
 	cursor, err := r.collection.Aggregate(
 		context.TODO(),
-		mongo.Pipeline{
-			{{Key: "$group", Value: bson.D{
+		mongo.Pipeline{{
+			{Key: "$mathc", Value: bson.M{"is_deleted": bson.M{"$exists": false}}},
+			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: nil},
 				{Key: "total_quantity", Value: bson.D{
 					{Key: "$sum", Value: "$quantity"},
@@ -136,7 +148,7 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 				},
 			},
 			},
-			}})
+		}})
 
 	if err != nil {
 		return 0, 0, 0, err
@@ -149,6 +161,7 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	cursor, err = r.collection.Aggregate(
 		context.TODO(),
 		mongo.Pipeline{{
+			{Key: "$mathc", Value: bson.M{"is_deleted": bson.M{"$exists": false}}},
 			{Key: "$group", Value: bson.D{
 				{Key: "_id", Value: nil},
 				{Key: "totalCostQuantity", Value: bson.D{
@@ -165,7 +178,7 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	cursor.All(context.TODO(), &result)
 	total_stock_value = result[0]["totalCostQuantity"].(float64)
 
-	total_products, err := r.collection.EstimatedDocumentCount(context.TODO())
+	total_products, err := r.collection.CountDocuments(context.TODO(), bson.M{"is_deleted": bson.M{"$exists": false}})
 	if err != nil {
 		return 0, 0, 0, err
 	}
@@ -185,4 +198,11 @@ func (r ProductRepo) GetByID(id primitive.ObjectID) (*model.ProductWithID, error
 	return &product, nil
 }
 
-func (r ProductRepo) Delete()
+func (r ProductRepo) Delete(id primitive.ObjectID) error {
+	err := r.collection.FindOneAndUpdate(
+		context.TODO(),
+		bson.M{"_id": id},
+		bson.M{"$set": bson.M{"is_deleted": true}},
+	).Err()
+	return err
+}
