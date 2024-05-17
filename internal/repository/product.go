@@ -132,58 +132,38 @@ func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint32) err
 }
 
 func (r ProductRepo) GetStats() (int, int, float64, error) {
-	var total_quantity int
+	var total_quantity int32
 	var total_stock_value float64
 	var result []bson.M
 
-	cursor, err := r.collection.Aggregate(
-		context.TODO(),
-		mongo.Pipeline{{
-			{Key: "$mathc", Value: bson.M{"is_deleted": bson.M{"$exists": false}}},
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: nil},
-				{Key: "total_quantity", Value: bson.D{
-					{Key: "$sum", Value: "$quantity"},
-				},
-				},
-			},
-			},
-		}})
+	filter := bson.M{"is_deleted": bson.M{"$exists": false}}
+
+	cursor, err := r.collection.Aggregate(context.TODO(), mongo.Pipeline{
+		bson.D{{Key: "$match", Value: filter}},
+		bson.D{{Key: "$group", Value: bson.D{
+			{Key: "_id", Value: nil},
+			{Key: "tq", Value: bson.M{"$sum": "$quantity"}},
+			{Key: "tsv", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$multiply", Value: []interface{}{"$sell_price", "$quantity"}}}}}},
+		}}},
+	})
 
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	defer cursor.Close(context.TODO())
-
-	cursor.All(context.TODO(), &result)
-	total_quantity = int(result[0]["total_quantity"].(int64))
-
-	cursor, err = r.collection.Aggregate(
-		context.TODO(),
-		mongo.Pipeline{{
-			{Key: "$mathc", Value: bson.M{"is_deleted": bson.M{"$exists": false}}},
-			{Key: "$group", Value: bson.D{
-				{Key: "_id", Value: nil},
-				{Key: "totalCostQuantity", Value: bson.D{
-					{Key: "$sum", Value: bson.D{
-						{Key: "$multiply", Value: bson.A{"$sell_price", "$quantity"}},
-					}},
-				}},
-			}},
-		}})
+	err = cursor.All(context.TODO(), &result)
 	if err != nil {
 		return 0, 0, 0, err
 	}
-
-	cursor.All(context.TODO(), &result)
-	total_stock_value = result[0]["totalCostQuantity"].(float64)
-
-	total_products, err := r.collection.CountDocuments(context.TODO(), bson.M{"is_deleted": bson.M{"$exists": false}})
+	total_quantity = result[0]["tq"].(int32)
+	total_stock_value, ok := result[0]["tsv"].(float64)
+	if !ok {
+		total_stock_value = 0
+	}
+	total_products, err := r.collection.CountDocuments(context.TODO(), filter)
 	if err != nil {
 		return 0, 0, 0, err
 	}
-
-	return int(total_products), total_quantity, total_stock_value, nil
+	return int(total_products), int(total_quantity), total_stock_value, nil
 }
 
 func (r ProductRepo) GetByID(id primitive.ObjectID) (*model.ProductWithID, error) {
