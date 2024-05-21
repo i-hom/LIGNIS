@@ -61,7 +61,7 @@ func (r MonthlyRepo) GetYearly() ([]api.Analytics, error) {
 			return nil, err
 		}
 		analytics = append(analytics, api.Analytics{
-			Label: fmt.Sprintf("%d-%d", a["month"].(int32), a["year"].(int32)),
+			Label: fmt.Sprintf("%d-%02d", a["year"].(int32), a["month"].(int32)),
 			Value: a["value"].(float64),
 		})
 	}

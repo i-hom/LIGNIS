@@ -100,14 +100,14 @@ func (s SaleRepo) GetThisMonthTopSoldProduct(limit int64) ([]api.Analytics, erro
 	thisMonth := time.Date(time.Now().Year(), time.Now().Month(), 1, 0, 0, 0, 0, time.UTC)
 	nextMonth := thisMonth.AddDate(0, 1, 0)
 	pipeline := mongo.Pipeline{
-		{{Key: "$match", Value: bson.M{"is_deleted": false, "_id": bson.M{"$gte": primitive.NewObjectIDFromTimestamp(thisMonth), "$lt": primitive.NewObjectIDFromTimestamp(nextMonth)}}}},
+		{{Key: "$match", Value: bson.M{"is_deleted": bson.M{"$exists": false}, "_id": bson.M{"$gte": primitive.NewObjectIDFromTimestamp(thisMonth), "$lt": primitive.NewObjectIDFromTimestamp(nextMonth)}}}},
 		{{Key: "$unwind", Value: "$cart"}},
 		{{Key: "$group", Value: bson.D{
 			{Key: "_id", Value: "$cart._id"},
 			{Key: "value", Value: bson.D{{Key: "$sum", Value: "$cart.quantity"}}},
 		}}},
 		{{Key: "$sort", Value: bson.D{{Key: "value", Value: -1}}}},
-		{{Key: "$limit", Value: limit}},
+		{{Key: "$limit", Value: 10}},
 		{{Key: "$lookup", Value: bson.D{
 			{Key: "from", Value: "products"},
 			{Key: "localField", Value: "_id"},
@@ -117,7 +117,7 @@ func (s SaleRepo) GetThisMonthTopSoldProduct(limit int64) ([]api.Analytics, erro
 		{{Key: "$unwind", Value: "$product"}},
 		{{Key: "$project", Value: bson.D{
 			{Key: "_id", Value: 0},
-			{Key: "key", Value: "$product.name"},
+			{Key: "label", Value: "$product.name"},
 			{Key: "value", Value: 1},
 		}}},
 	}
