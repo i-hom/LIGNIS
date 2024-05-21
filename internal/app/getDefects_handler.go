@@ -23,8 +23,13 @@ func (a App) GetDefects(ctx context.Context, params api.GetDefectsParams) (*api.
 
 		defectProducts := make([]api.DefectProduct, 0)
 		for i := range defects[i].Defects {
+			product, err := a.productRepo.GetByID(defects[i].Defects[i].ProductID)
+			if err != nil {
+				return nil, err
+			}
 			defectProducts = append(defectProducts, api.DefectProduct{
 				ProductID: defects[i].Defects[i].ProductID.Hex(),
+				Name:      product.Name,
 				Quantity:  int(defects[i].Defects[i].Quantity),
 				Remark:    api.OptString{Set: true, Value: defects[i].Defects[i].Remark},
 			})

@@ -23,7 +23,7 @@ func (a App) CreateDefect(ctx context.Context, req *api.CreateDefectReq) (*api.R
 		if err != nil {
 			return &api.ResponseWithID{}, err
 		}
-		err = a.productRepo.Consume(id, uint32(p.Quantity))
+		err = a.productRepo.Consume(id, uint64(p.Quantity))
 		if err != nil {
 			return &api.ResponseWithID{}, err
 		}

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"lignis/internal/generated/api"
 	"lignis/internal/model"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -34,14 +35,14 @@ func (a App) CreateSale(ctx context.Context, req *api.Sales) (*api.ResponseWithI
 			return &api.ResponseWithID{}, err
 		}
 
-		err = a.productRepo.Consume(id, uint32(p.Quantity))
+		err = a.productRepo.Consume(id, uint64(p.Quantity))
 		if err != nil {
 			return &api.ResponseWithID{}, err
 		}
 
 		sales = append(sales, model.ShortProduct{
 			ID:       id,
-			Quantity: uint32(p.Quantity),
+			Quantity: uint64(p.Quantity),
 			Price:    p.Price,
 		})
 	}
@@ -72,5 +73,8 @@ func (a App) CreateSale(ctx context.Context, req *api.Sales) (*api.ResponseWithI
 	if err != nil {
 		return &api.ResponseWithID{}, err
 	}
+
+	a.monthlyRepo.Operation(time.Now(), req.TotalUsd)
+
 	return &api.ResponseWithID{ID: res.Hex()}, nil
 }

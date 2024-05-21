@@ -26,6 +26,7 @@ type App struct {
 	acceptanceRepo *repository.AcceptanceRepo
 	customerRepo   *repository.CustomerRepo
 	defectRepo     *repository.DefectRepo
+	monthlyRepo    *repository.MonthlyRepo
 }
 
 func NewApp() (*App, error) {

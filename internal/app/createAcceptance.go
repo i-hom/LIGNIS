@@ -33,7 +33,7 @@ func (a App) CreateAcceptance(ctx context.Context, req *api.CreateAcceptanceReq)
 			return &api.ResponseWithID{}, err
 		}
 
-		product.Quantity += uint32(p.Quantity)
+		product.Quantity += uint64(p.Quantity)
 		product.SellPrice = p.SellPrice
 
 		err = a.productRepo.Update(product)
@@ -43,7 +43,7 @@ func (a App) CreateAcceptance(ctx context.Context, req *api.CreateAcceptanceReq)
 
 		acceptance = append(acceptance, model.ShortProduct{
 			ID:       id,
-			Quantity: uint32(p.Quantity),
+			Quantity: uint64(p.Quantity),
 			Price:    p.CostPrice,
 		})
 	}

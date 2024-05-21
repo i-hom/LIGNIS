@@ -11,7 +11,6 @@ import (
 
 func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) (*api.GetAgentsOK, error) {
 	user := ctx.Value("user").(*model.Claims)
-
 	if user.Role != "admin" && user.Role != "salesman" {
 		return nil, errors.New("access denied")
 	}
@@ -25,7 +24,7 @@ func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) (*api.Ge
 		if err != nil {
 			return nil, err
 		}
-		return &api.GetAgentsOK{Total: 1, Agents: []api.AgentWithID{{ID: user.ID.Hex(), Fio: user.Fio, Phone: user.Phone, InstagramUsername: user.InstagramUsername, BonusPercent: int(user.BonusPercent)}}}, nil
+		return &api.GetAgentsOK{Total: 1, Agents: []api.AgentWithID{user.ToApi()}}, nil
 	}
 
 	response := make([]api.AgentWithID, 0)
@@ -34,14 +33,8 @@ func (a App) GetAgents(ctx context.Context, params api.GetAgentsParams) (*api.Ge
 		return nil, err
 	}
 
-	for i := range agents {
-		response = append(response, api.AgentWithID{
-			ID:                agents[i].ID.Hex(),
-			Fio:               agents[i].Fio,
-			Phone:             agents[i].Phone,
-			InstagramUsername: agents[i].InstagramUsername,
-			BonusPercent:      int(agents[i].BonusPercent),
-		})
+	for _, el := range agents {
+		response = append(response, el.ToApi())
 	}
 	return &api.GetAgentsOK{Total: int(total), Agents: response}, nil
 }

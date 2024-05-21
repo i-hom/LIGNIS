@@ -60,3 +60,20 @@ func (r DefectRepo) GetByPatter(pattern string, limit, page int64) ([]model.Defe
 	}
 	return defects, count, nil
 }
+
+func (r DefectRepo) GetByID(id primitive.ObjectID) (*model.Defect, error) {
+	var defect model.Defect
+	err := r.collection.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&defect)
+	if err != nil {
+		return nil, err
+	}
+	return &defect, nil
+}
+
+func (r DefectRepo) Delete(id primitive.ObjectID) error {
+	_, err := r.collection.DeleteOne(context.TODO(), bson.M{"_id": id})
+	if err != nil {
+		return err
+	}
+	return nil
+}

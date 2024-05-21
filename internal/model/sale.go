@@ -11,7 +11,7 @@ type Sale struct {
 	CustomerId   primitive.ObjectID `bson:"customer_id,omitempty"`
 	SalesmanId   primitive.ObjectID `bson:"salesman_id"`
 	Cart         []ShortProduct     `bson:"cart"`
-	TotalUZS     float64            `bson:"total_uzs"`
+	TotalUZS     int64              `bson:"total_uzs"`
 	TotalUSD     float64            `bson:"total_usd"`
 	CurrencyCode string             `bson:"currency_code"`
 	Is_Deleted   bool               `bson:"deleted_at,omitempty"`

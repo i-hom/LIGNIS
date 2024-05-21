@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"lignis/internal/model"
+	"reflect"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -91,7 +92,7 @@ func (r ProductRepo) GetByPattern(pattern string, page, limit int64, is_deleted 
 	return products, count, nil
 }
 
-func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint32) error {
+func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint64) error {
 	err := r.collection.FindOneAndUpdate(
 		context.TODO(),
 		bson.M{"_id": product_id, "is_deleted": bson.M{"$exists": false}},
@@ -103,7 +104,7 @@ func (r ProductRepo) Add(product_id primitive.ObjectID, quantity uint32) error {
 	return nil
 }
 
-func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint32) error {
+func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint64) error {
 	var product model.ProductWithID
 	err := r.collection.FindOne(
 		context.TODO(),
@@ -132,20 +133,21 @@ func (r ProductRepo) Consume(product_id primitive.ObjectID, quantity uint32) err
 }
 
 func (r ProductRepo) GetStats() (int, int, float64, error) {
-	var total_quantity int32
+	var total_quantity int
 	var total_stock_value float64
 	var result []bson.M
 
 	filter := bson.M{"is_deleted": bson.M{"$exists": false}}
 
-	cursor, err := r.collection.Aggregate(context.TODO(), mongo.Pipeline{
-		bson.D{{Key: "$match", Value: filter}},
-		bson.D{{Key: "$group", Value: bson.D{
-			{Key: "_id", Value: nil},
-			{Key: "tq", Value: bson.M{"$sum": "$quantity"}},
-			{Key: "tsv", Value: bson.D{{Key: "$sum", Value: bson.D{{Key: "$multiply", Value: []interface{}{"$sell_price", "$quantity"}}}}}},
-		}}},
-	})
+	cursor, err := r.collection.Aggregate(context.TODO(),
+		[]bson.M{
+			{"$match": filter},
+			{"$group": bson.A{
+				bson.M{"_id": nil},
+				bson.M{"tq": bson.M{"$sum": "$quantity"}},
+				bson.M{"tsv": bson.M{"$sum": bson.M{"$multiply": bson.A{"$sell_price", "$quantity"}}}}},
+			}},
+	)
 
 	if err != nil {
 		return 0, 0, 0, err
@@ -154,7 +156,19 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	total_quantity = result[0]["tq"].(int32)
+
+	if len(result) == 0 {
+		return 0, 0, 0, nil
+	}
+	if result[0]["tq"] == nil || result[0]["tsv"] == nil {
+		return 0, 0, 0, nil
+	}
+
+	if reflect.TypeOf(result[0]["tq"]) == reflect.TypeOf(int32(0)) {
+		total_quantity = int(result[0]["tq"].(int32))
+	} else if reflect.TypeOf(result[0]["tq"]) == reflect.TypeOf(int64(0)) {
+		total_quantity = int(result[0]["tq"].(int64))
+	}
 	total_stock_value, ok := result[0]["tsv"].(float64)
 	if !ok {
 		total_stock_value = 0
@@ -163,7 +177,7 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	return int(total_products), int(total_quantity), total_stock_value, nil
+	return int(total_products), total_quantity, total_stock_value, nil
 }
 
 func (r ProductRepo) GetByID(id primitive.ObjectID) (*model.ProductWithID, error) {

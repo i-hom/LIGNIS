@@ -59,6 +59,7 @@ func (a *App) initRepo() {
 	a.acceptanceRepo = repository.NewAcceptanceRepo(a.db.GetCollection("acceptances"))
 	a.customerRepo = repository.NewCustomerRepo(a.db.GetCollection("customers"))
 	a.defectRepo = repository.NewDefectRepo(a.db.GetCollection("defects"))
+	a.monthlyRepo = repository.NewMonthlyRepo(a.db.GetCollection("monthly"))
 }
 
 func (a App) HandleBearerAuth(ctx context.Context, operationName string, t api.BearerAuth) (context.Context, error) {

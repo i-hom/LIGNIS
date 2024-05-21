@@ -583,7 +583,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete defect
+      operationId: deleteDefect
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID for delete
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   
+  /api/v1/dashboard:
+    get:
+      summary: Get dashboard
+      description: Get dashboard
+      operationId: getDashboard
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/product/stats:
     get:
       summary: Get product stats
@@ -614,6 +656,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   
+  /api/v1/report/monthly:
+    get:
+      summary: Get monthly report
+      description: Get monthly report
+      operationId: getMonthlyReport
+      parameters:
+        - in: query
+          name: month
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - report
+                properties:
+                  report:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DailyReport'
+                
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /api/v1/sale:
     post: #salesman
       summary: Create sale
@@ -1025,9 +1100,12 @@ components:
       type: object
       required:
         - product_id
+        - name
         - quantity
       properties:
         product_id:
+          type: string
+        name:
           type: string
         quantity:
           type: integer
@@ -1097,7 +1175,6 @@ components:
       required:
         - fio
         - phone
-        - instagram_username
         - bonus_percent
       properties:
         fio:
@@ -1140,7 +1217,8 @@ components:
           items:
             $ref: '#/components/schemas/SaleProduct'
         total_uzs:
-          type: number
+          type: integer
+          format: int64
         total_usd:
           type: number
         currency_code:
@@ -1176,6 +1254,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AcceptanceProduct'
-        
+
+    Analytics:
+      type: object
+      required:
+        - label
+        - value
+      properties:
+        label:
+          type: string
+        value:
+          type: number
+
+    DailyReport:
+      type: object
+      required:
+        - date
+        - total_uzs
+        - total_usd
+      properties:
+        date:
+          type: string
+        total_uzs:
+          type: integer
+          format: int64
+        total_usd:
+          type: number
+
+    Dashboard:
+      type: object
+      required:
+        - weekly
+        - yearly
+        - topProducts
+      properties:
+        last7daySales:
+          type: array
+          items:
+            $ref: '#/components/schemas/Analytics'
+        lastYearSales:
+          type: array
+          items:
+            $ref: '#/components/schemas/Analytics'
+        topProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Analytics'
+
 security:
   - BearerAuth: [ ]

@@ -82,7 +82,7 @@ func (a AcceptanceRepo) GetByDate(from, to string, limit, page int64) ([]model.A
 		if err != nil {
 			return nil, 0, err
 		}
-		result.Date = result.ID.Timestamp()
+		result.Date = result.ID.Timestamp().Add(time.Hour * 5)
 		acceptances = append(acceptances, result)
 	}
 	return acceptances, count, err
