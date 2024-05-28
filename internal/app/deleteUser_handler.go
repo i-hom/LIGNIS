@@ -21,6 +21,10 @@ func (a App) DeleteUser(ctx context.Context, params api.DeleteUserParams) (*api.
 		return &api.SuccessResponse{}, err
 	}
 
+	if deletionID == user.UserID {
+		return &api.SuccessResponse{}, errors.New("you can't delete yourself")
+	}
+
 	err = a.userRepo.Delete(deletionID)
 	if err != nil {
 		return &api.SuccessResponse{}, err
