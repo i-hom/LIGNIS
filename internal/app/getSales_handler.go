@@ -11,7 +11,6 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 	user := ctx.Value("user").(*model.Claims)
 	isAgent := true
 	isCustomer := true
-	isDeletedBy := true
 	if user.Role != "admin" && user.Role != "salesman" {
 		return nil, errors.New("access denied")
 	}
@@ -37,7 +36,7 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 				ID:       sales[i].Cart[j].ID.Hex(),
 				Quantity: int(sales[i].Cart[j].Quantity),
 				Price:    sales[i].Cart[j].Price,
-				Name:     api.OptString{Set: true, Value: product_name},
+				Name:     api.NewOptString(product_name),
 			})
 		}
 		if sales[i].AgentId.IsZero() {
@@ -46,14 +45,10 @@ func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetS
 		if sales[i].CustomerId.IsZero() {
 			isCustomer = false
 		}
-		if sales[i].Deleted_By.IsZero() {
-			isDeletedBy = false
-		}
 		response = append(response, api.SalesWithID{
 			ID:           sales[i].ID.Hex(),
 			AgentID:      api.OptString{Set: isAgent, Value: sales[i].AgentId.Hex()},
 			CustomerID:   api.OptString{Set: isCustomer, Value: sales[i].CustomerId.Hex()},
-			DeletedBy:    api.OptString{Set: isDeletedBy, Value: sales[i].Deleted_By.Hex()},
 			Date:         sales[i].Date,
 			TotalUzs:     sales[i].TotalUZS,
 			TotalUsd:     sales[i].TotalUSD,

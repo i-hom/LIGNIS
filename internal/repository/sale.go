@@ -185,6 +185,8 @@ func (s SaleRepo) GetLastWeek() ([]api.Analytics, error) {
 
 func (s SaleRepo) GetMontylyReport(month time.Time) ([]api.DailyReport, error) {
 	stats := make([]api.DailyReport, 0)
+	var monthly_usd float64 = 0.0
+	var monthly_uzs int64 = 0
 	cursor, err := s.collection.Aggregate(
 		context.TODO(),
 		[]bson.M{
@@ -227,15 +229,103 @@ func (s SaleRepo) GetMontylyReport(month time.Time) ([]api.DailyReport, error) {
 
 		if currency == "UZS" {
 			data[date].TotalUzs = result["total_uzs"].(int64)
+			monthly_uzs += result["total_uzs"].(int64)
 		}
 
 		if currency == "USD" {
 			data[date].TotalUsd = result["total_usd"].(float64)
+			monthly_usd += result["total_usd"].(float64)
 		}
 	}
 
 	for _, v := range data {
 		stats = append(stats, *v)
 	}
+
+	stats = append(stats, api.DailyReport{
+		Date:     "Total",
+		TotalUzs: monthly_uzs,
+		TotalUsd: monthly_usd,
+	})
 	return stats, nil
+}
+
+func (s SaleRepo) GetMonthlyBonus(month time.Time, id primitive.ObjectID) (api.GetAgentReportOK, error) {
+	stats := make([]api.GetAgentReportOKReportItem, 0)
+
+	cursor, err := s.collection.Aggregate(context.TODO(), []bson.M{
+		{
+			"$match": bson.M{
+				"_id": bson.M{
+					"$gte": primitive.NewObjectIDFromTimestamp(month),
+					"$lt":  primitive.NewObjectIDFromTimestamp(month.AddDate(0, 1, 0)),
+				},
+				"agent_id": id,
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id":   "$agent_id",
+				"total": bson.M{"$sum": "$total_usd"},
+				"recipts": bson.M{
+					"$push": bson.M{
+						"id":    "$_id",
+						"date":  bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d", "date": bson.M{"$toDate": "$_id"}}},
+						"total": "$total_usd",
+					},
+				},
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "agents",
+				"localField":   "_id",
+				"foreignField": "_id",
+				"as":           "agent",
+			},
+		},
+		{"$unwind": "$agent"},
+		{
+			"$addFields": bson.M{
+				"bonus": bson.M{"$multiply": []interface{}{"$total", bson.M{"$multiply": []interface{}{0.01, "$agent.bonus_percent"}}}},
+			},
+		},
+		{
+			"$project": bson.M{
+				"bonus":   1,
+				"recipts": 1,
+				"total":   1,
+			},
+		},
+	})
+
+	if err != nil {
+		return api.GetAgentReportOK{}, err
+	}
+	defer cursor.Close(context.TODO())
+
+	result := make([]bson.M, 0)
+	err = cursor.All(context.TODO(), &result)
+
+	if err != nil {
+		return api.GetAgentReportOK{}, err
+	}
+
+	if len(result) == 0 {
+		return api.GetAgentReportOK{}, nil
+	}
+	recipts := result[0]["recipts"].(primitive.A)
+	for _, v := range recipts {
+		stats = append(stats, api.GetAgentReportOKReportItem{
+			ID:       v.(bson.M)["id"].(primitive.ObjectID).Hex(),
+			Date:     v.(bson.M)["date"].(string),
+			TotalUsd: v.(bson.M)["total"].(float64),
+		})
+	}
+
+	return api.GetAgentReportOK{
+		Report: stats,
+		Total:  result[0]["total"].(float64),
+		Bonus:  result[0]["bonus"].(float64),
+	}, nil
 }

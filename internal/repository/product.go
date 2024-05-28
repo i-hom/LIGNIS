@@ -142,10 +142,10 @@ func (r ProductRepo) GetStats() (int, int, float64, error) {
 	cursor, err := r.collection.Aggregate(context.TODO(),
 		[]bson.M{
 			{"$match": filter},
-			{"$group": bson.A{
-				bson.M{"_id": nil},
-				bson.M{"tq": bson.M{"$sum": "$quantity"}},
-				bson.M{"tsv": bson.M{"$sum": bson.M{"$multiply": bson.A{"$sell_price", "$quantity"}}}}},
+			{"$group": bson.M{
+				"_id": nil,
+				"tq":  bson.M{"$sum": "$quantity"},
+				"tsv": bson.M{"$sum": bson.M{"$multiply": bson.A{"$sell_price", "$quantity"}}}},
 			}},
 	)
 
@@ -199,4 +199,12 @@ func (r ProductRepo) Delete(id primitive.ObjectID) error {
 		bson.M{"$set": bson.M{"is_deleted": true}},
 	).Err()
 	return err
+}
+
+func (r ProductRepo) Restore(product_id primitive.ObjectID) error {
+	_, err := r.collection.UpdateOne(context.TODO(), bson.M{"_id": product_id}, bson.M{"$unset": bson.M{"is_deleted": 1}})
+	if err != nil {
+		return err
+	}
+	return nil
 }

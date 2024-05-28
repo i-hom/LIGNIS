@@ -681,7 +681,67 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/DailyReport'
+                  total_uzs:
+                    type: number
+                    format: int64
+                  total_usd:
+                    type: number
                 
+        default:
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/v1/report/agent:
+    get:
+      summary: Get agent report
+      description: Get agent report
+      operationId: getAgentReport
+      parameters:
+        - in: query
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: month
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - recipts
+                  - total
+                  - bonus
+                properties:
+                  report:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - date
+                        - total_usd
+                      properties:
+                        id:
+                          type: string
+                        date:
+                          type: string
+                        total_usd:
+                          type: number
+                  total:
+                    type: number
+                  bonus:
+                    type: number
+
         default:
           description: Unauthorized
           content:
@@ -1100,7 +1160,6 @@ components:
       type: object
       required:
         - product_id
-        - name
         - quantity
       properties:
         product_id:

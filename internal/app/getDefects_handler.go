@@ -29,9 +29,9 @@ func (a App) GetDefects(ctx context.Context, params api.GetDefectsParams) (*api.
 			}
 			defectProducts = append(defectProducts, api.DefectProduct{
 				ProductID: defects[i].Defects[i].ProductID.Hex(),
-				Name:      product.Name,
+				Name:      api.NewOptString(product.Name),
 				Quantity:  int(defects[i].Defects[i].Quantity),
-				Remark:    api.OptString{Set: true, Value: defects[i].Defects[i].Remark},
+				Remark:    api.NewOptString(defects[i].Defects[i].Remark),
 			})
 		}
 
