@@ -202,7 +202,7 @@ func (r ProductRepo) Delete(id primitive.ObjectID) error {
 }
 
 func (r ProductRepo) Restore(product_id primitive.ObjectID) error {
-	_, err := r.collection.UpdateOne(context.TODO(), bson.M{"_id": product_id}, bson.M{"$unset": bson.M{"is_deleted": 1}})
+	_, err := r.collection.UpdateOne(context.TODO(), bson.M{"_id": product_id, "is_deleted": true}, bson.M{"$unset": bson.M{"is_deleted": 1}})
 	if err != nil {
 		return err
 	}

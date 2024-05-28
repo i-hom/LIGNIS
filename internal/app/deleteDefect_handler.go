@@ -27,7 +27,6 @@ func (a App) DeleteDefect(ctx context.Context, params api.DeleteDefectParams) (*
 		return &api.SuccessResponse{}, err
 	}
 	for _, p := range defect.Defects {
-		err = a.productRepo.Restore(p.ProductID)
 		if err != nil {
 			return &api.SuccessResponse{}, err
 		}
