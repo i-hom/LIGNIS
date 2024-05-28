@@ -196,15 +196,7 @@ func (s SaleRepo) GetMontylyReport(month time.Time) ([]api.DailyReport, error) {
 			{
 				"$group": bson.M{
 					"_id": bson.M{
-						"date": bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d %H:%M", "date": bson.M{
-							"$dateAdd": bson.M{
-								"startDate": bson.M{
-									"$toDate": "$_id",
-								},
-								"unit":   "hour",
-								"amount": 5,
-							},
-						}}},
+						"date":          bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d", "date": bson.M{"$toDate": "$_id"}}},
 						"currency_code": "$currency_code",
 					},
 					"total_uzs": bson.M{"$sum": "$total_uzs"},
