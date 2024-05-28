@@ -195,7 +195,7 @@ func (r ProductRepo) GetByID(id primitive.ObjectID) (*model.ProductWithID, error
 func (r ProductRepo) Delete(id primitive.ObjectID) error {
 	err := r.collection.FindOneAndUpdate(
 		context.TODO(),
-		bson.M{"_id": id},
+		bson.M{"_id": id, "quantity": bson.M{"$eq": 0}},
 		bson.M{"$set": bson.M{"is_deleted": true}},
 	).Err()
 	return err
