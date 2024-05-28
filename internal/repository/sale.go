@@ -196,7 +196,15 @@ func (s SaleRepo) GetMontylyReport(month time.Time) ([]api.DailyReport, error) {
 			{
 				"$group": bson.M{
 					"_id": bson.M{
-						"date":          bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d", "date": bson.M{"$toDate": "$_id"}}},
+						"date": bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d %H:%M", "date": bson.M{
+							"$dateAdd": bson.M{
+								"startDate": bson.M{
+									"$toDate": "$_id",
+								},
+								"unit":   "hour",
+								"amount": 5,
+							},
+						}}},
 						"currency_code": "$currency_code",
 					},
 					"total_uzs": bson.M{"$sum": "$total_uzs"},
@@ -269,8 +277,20 @@ func (s SaleRepo) GetMonthlyBonus(month time.Time, id primitive.ObjectID) (api.G
 				"total": bson.M{"$sum": "$total_usd"},
 				"recipts": bson.M{
 					"$push": bson.M{
-						"id":    "$_id",
-						"date":  bson.M{"$dateToString": bson.M{"format": "%Y-%m-%d", "date": bson.M{"$toDate": "$_id"}}},
+						"id": "$_id",
+						"date": bson.M{
+							"$dateToString": bson.M{
+								"format": "%Y-%m-%d %H:%M", "date": bson.M{
+									"$dateAdd": bson.M{
+										"startDate": bson.M{
+											"$toDate": "$_id",
+										},
+										"unit":   "hour",
+										"amount": 5,
+									},
+								},
+							},
+						},
 						"total": "$total_usd",
 					},
 				},
