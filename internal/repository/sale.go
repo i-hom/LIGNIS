@@ -191,7 +191,15 @@ func (s SaleRepo) GetMontylyReport(month time.Time) ([]api.DailyReport, error) {
 		context.TODO(),
 		[]bson.M{
 			{
-				"$match": bson.M{"is_deleted": bson.M{"$exists": false}, "_id": bson.M{"$gte": primitive.NewObjectIDFromTimestamp(month), "$lt": primitive.NewObjectIDFromTimestamp(month.AddDate(0, 1, 0))}},
+				"$match": bson.M{
+					"is_deleted": bson.M{
+						"$exists": false,
+					},
+					"_id": bson.M{
+						"$gte": primitive.NewObjectIDFromTimestamp(month),
+						"$lt":  primitive.NewObjectIDFromTimestamp(month.AddDate(0, 1, 0)),
+					},
+				},
 			},
 			{
 				"$group": bson.M{
@@ -261,6 +269,9 @@ func (s SaleRepo) GetMonthlyBonus(month time.Time, id primitive.ObjectID) (api.G
 					"$lt":  primitive.NewObjectIDFromTimestamp(month.AddDate(0, 1, 0)),
 				},
 				"agent_id": id,
+				"is_deleted": bson.M{
+					"$exists": false,
+				},
 			},
 		},
 		{

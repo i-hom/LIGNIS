@@ -31,5 +31,6 @@ docker-compose-infra:
 run:
 	@clear
 	@go build -o build/main cmd/main.go
+	echo "Compilation completed"
 	@docker-compose -f build/docker_compose.yaml up --build -d
 

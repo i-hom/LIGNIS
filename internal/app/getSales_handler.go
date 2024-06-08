@@ -2,18 +2,12 @@ package app
 
 import (
 	"context"
-	"errors"
 	"lignis/internal/generated/api"
-	"lignis/internal/model"
 )
 
 func (a App) GetSales(ctx context.Context, params api.GetSalesParams) (*api.GetSalesOK, error) {
-	user := ctx.Value("user").(*model.Claims)
 	isAgent := true
 	isCustomer := true
-	if user.Role != "admin" && user.Role != "salesman" {
-		return nil, errors.New("access denied")
-	}
 
 	var response []api.SalesWithID
 	sales, total, err := a.saleRepo.GetByDate(params.From.Value, params.To.Value, int64(params.Limit.Value), int64(params.Page.Value), false)
