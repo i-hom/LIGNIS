@@ -46,9 +46,8 @@ func (s SaleRepo) GetByDate(from, to string, limit, page int64, is_deleted bool)
 	format := "2006-01-02"
 
 	if from == "" || to == "" {
-		filter = bson.M{}
+		filter = bson.M{"is_deleted": bson.M{"$exists": is_deleted}}
 	} else {
-
 		tfrom, err := time.Parse(format, from)
 		if err != nil {
 			return nil, 0, err

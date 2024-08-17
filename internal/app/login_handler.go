@@ -16,7 +16,7 @@ func (a App) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRespon
 
 	user, err := a.userRepo.GetByLogin(req.Login)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("user not found")
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashPass), []byte(req.Password))
@@ -26,7 +26,7 @@ func (a App) Login(ctx context.Context, req *api.LoginRequest) (*api.LoginRespon
 
 	token, err := a.auth.GenerateToken(user)
 	if err != nil {
-		return &api.LoginResponse{}, err
+		return &api.LoginResponse{}, errors.New("login failed")
 	}
 
 	return &api.LoginResponse{Token: token}, nil

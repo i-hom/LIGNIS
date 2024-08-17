@@ -7,11 +7,16 @@ import (
 	"lignis/internal/model"
 )
 
+type ByObject struct {
+	Name    string
+	IsExist bool
+}
+
 func (a App) GetRefunds(ctx context.Context, params api.GetRefundsParams) (*api.GetRefundsOK, error) {
 	user := ctx.Value("user").(*model.Claims)
-	isAgent := true
-	isCustomer := true
-	isDeletedBy := true
+	agent := ByObject{"deleted agent", false}
+	customer := ByObject{"deleted customer", false}
+	deleter := ByObject{"deleted user", false}
 	response := make([]api.SalesWithID, 0)
 	if user.Role != "manager" && user.Role != "admin" {
 		return nil, errors.New("access denied")
@@ -39,20 +44,32 @@ func (a App) GetRefunds(ctx context.Context, params api.GetRefundsParams) (*api.
 				Name:     api.NewOptString(product_name),
 			})
 		}
-		if refund[i].AgentId.IsZero() {
-			isAgent = false
+		if !refund[i].AgentId.IsZero() {
+			agent.IsExist = true
+			AgentName, err := a.agentRepo.GetByID(refund[i].AgentId)
+			if err == nil {
+				agent.Name = AgentName.Fio
+			}
 		}
-		if refund[i].CustomerId.IsZero() {
-			isCustomer = false
+		if !refund[i].CustomerId.IsZero() {
+			customer.IsExist = true
+			CustomerName, err := a.customerRepo.GetByID(refund[i].CustomerId)
+			if err == nil {
+				customer.Name = CustomerName.Fio
+			}
 		}
-		if refund[i].Deleted_By.IsZero() {
-			isDeletedBy = false
+		if !refund[i].Deleted_By.IsZero() {
+			deleter.IsExist = true
+			DeletedBy, err := a.userRepo.GetByID(refund[i].Deleted_By)
+			if err == nil {
+				deleter.Name = DeletedBy.Fio
+			}
 		}
 		response = append(response, api.SalesWithID{
 			ID:           refund[i].ID.Hex(),
-			AgentID:      api.OptString{Set: isAgent, Value: refund[i].AgentId.Hex()},
-			CustomerID:   api.OptString{Set: isCustomer, Value: refund[i].CustomerId.Hex()},
-			DeletedBy:    api.OptString{Set: isDeletedBy, Value: refund[i].Deleted_By.Hex()},
+			AgentID:      api.OptString{Set: agent.IsExist, Value: agent.Name},
+			CustomerID:   api.OptString{Set: customer.IsExist, Value: customer.Name},
+			DeletedBy:    api.OptString{Set: deleter.IsExist, Value: deleter.Name},
 			Date:         refund[i].Date,
 			TotalUzs:     refund[i].TotalUZS,
 			TotalUsd:     refund[i].TotalUSD,

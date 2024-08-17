@@ -20,7 +20,10 @@ func (a App) GetDefects(ctx context.Context, params api.GetDefectsParams) (*api.
 	}
 	response := make([]api.Defect, 0)
 	for i := range defects {
-
+		createBy, err := a.userRepo.GetByID(defects[i].CreatedBy)
+		if err != nil {
+			return nil, err
+		}
 		defectProducts := make([]api.DefectProduct, 0)
 		for i := range defects[i].Defects {
 			product, err := a.productRepo.GetByID(defects[i].Defects[i].ProductID)
@@ -38,7 +41,7 @@ func (a App) GetDefects(ctx context.Context, params api.GetDefectsParams) (*api.
 		response = append(response, api.Defect{
 			ID:        defects[i].ID.Hex(),
 			Defects:   defectProducts,
-			CreatedBy: defects[i].CreatedBy.Hex(),
+			CreatedBy: createBy.Fio,
 		})
 	}
 	return &api.GetDefectsOK{Total: int(total), Defects: response}, nil
